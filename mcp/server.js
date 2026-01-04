@@ -60,6 +60,7 @@ function sendCommand(command, params = {}) {
 
 // Tool definitions
 const TOOLS = [
+  // ===== CORE BROWSER CONTROL =====
   {
     name: 'firefox_create_window',
     description: 'Create a new private Firefox browser window. Always call this first before other browser commands. Returns windowId for reference.',
@@ -166,10 +167,133 @@ const TOOLS = [
       required: ['windowId'],
     },
   },
+
+  // ===== DEVTOOLS FEATURES =====
+  {
+    name: 'firefox_get_console',
+    description: 'Get captured console logs from the page. Captures console.log, console.warn, console.error, and uncaught exceptions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        level: {
+          type: 'string',
+          description: 'Filter by log level: log, warn, error, info, debug',
+          enum: ['log', 'warn', 'error', 'info', 'debug'],
+        },
+        clear: {
+          type: 'boolean',
+          description: 'Clear logs after returning (default: false)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum logs to return (default: 100)',
+        },
+      },
+    },
+  },
+  {
+    name: 'firefox_get_network',
+    description: 'Get captured network requests. Shows XHR, fetch, script, image, and other resource requests with status codes and timing.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Filter by request type: xmlhttprequest, script, stylesheet, image, font, etc.',
+        },
+        status: {
+          type: 'string',
+          description: 'Filter by status: pending, completed, error',
+          enum: ['pending', 'completed', 'error'],
+        },
+        clear: {
+          type: 'boolean',
+          description: 'Clear requests after returning (default: false)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum requests to return (default: 50)',
+        },
+      },
+    },
+  },
+  {
+    name: 'firefox_evaluate',
+    description: 'Execute JavaScript in the page context and return the result. Useful for extracting data, checking state, or debugging.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        expression: {
+          type: 'string',
+          description: 'JavaScript expression to evaluate (e.g., "document.title", "window.localStorage.getItem(\'key\')")',
+        },
+      },
+      required: ['expression'],
+    },
+  },
+  {
+    name: 'firefox_wait_for',
+    description: 'Wait for an element to appear on the page. Useful for SPAs and dynamic content.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: {
+          type: 'string',
+          description: 'CSS selector to wait for',
+        },
+        timeout: {
+          type: 'number',
+          description: 'Maximum time to wait in milliseconds (default: 10000)',
+        },
+      },
+      required: ['selector'],
+    },
+  },
+  {
+    name: 'firefox_scroll',
+    description: 'Scroll to an element or position on the page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: {
+          type: 'string',
+          description: 'CSS selector to scroll to',
+        },
+        x: {
+          type: 'number',
+          description: 'X coordinate to scroll to',
+        },
+        y: {
+          type: 'number',
+          description: 'Y coordinate to scroll to',
+        },
+        behavior: {
+          type: 'string',
+          description: 'Scroll behavior: smooth or instant (default: smooth)',
+          enum: ['smooth', 'instant'],
+        },
+      },
+    },
+  },
+  {
+    name: 'firefox_get_element',
+    description: 'Get detailed information about an element including attributes, styles, visibility, and position.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: {
+          type: 'string',
+          description: 'CSS selector for the element',
+        },
+      },
+      required: ['selector'],
+    },
+  },
 ];
 
 // Map MCP tool names to Claudezilla commands
 const TOOL_TO_COMMAND = {
+  // Core browser control
   firefox_create_window: 'createWindow',
   firefox_navigate: 'navigate',
   firefox_get_content: 'getContent',
@@ -178,13 +302,20 @@ const TOOL_TO_COMMAND = {
   firefox_screenshot: 'screenshot',
   firefox_get_tabs: 'getTabs',
   firefox_close_window: 'closeWindow',
+  // Devtools features
+  firefox_get_console: 'getConsoleLogs',
+  firefox_get_network: 'getNetworkRequests',
+  firefox_evaluate: 'evaluate',
+  firefox_wait_for: 'waitFor',
+  firefox_scroll: 'scroll',
+  firefox_get_element: 'getElementInfo',
 };
 
 // Create MCP server
 const server = new Server(
   {
     name: 'claudezilla',
-    version: '0.1.0',
+    version: '0.2.0',
   },
   {
     capabilities: {

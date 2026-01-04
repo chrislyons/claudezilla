@@ -4,11 +4,20 @@ Firefox browser automation for [Claude Code](https://claude.com/claude-code). A 
 
 ## Features
 
+### Browser Automation
 - **Tab Navigation** — Open URLs, switch tabs
 - **DOM Reading** — Get page content, element text
 - **Click** — Click elements by CSS selector
 - **Type** — Enter text in input fields
 - **Screenshot** — Capture visible viewport
+
+### DevTools Access (v0.2.0)
+- **Console Capture** — See console.log/warn/error and uncaught exceptions
+- **Network Monitoring** — Track XHR, fetch, scripts with status codes and timing
+- **JavaScript Evaluation** — Run JS in page context, extract data
+- **Element Inspection** — Get attributes, styles, visibility
+- **Wait for Element** — Handle SPAs and dynamic content
+- **Scroll Control** — Scroll to elements or coordinates
 
 ## Requirements
 
@@ -71,6 +80,8 @@ cd mcp && npm install
 ```
 
 **Available MCP Tools:**
+
+*Browser Control:*
 - `firefox_create_window` — Create a private browser window
 - `firefox_navigate` — Navigate to URL
 - `firefox_get_content` — Read page content
@@ -80,11 +91,20 @@ cd mcp && npm install
 - `firefox_get_tabs` — List open tabs
 - `firefox_close_window` — Close browser window
 
+*DevTools:*
+- `firefox_get_console` — Get console logs (filter by level)
+- `firefox_get_network` — Get network requests (filter by type/status)
+- `firefox_evaluate` — Run JavaScript in page context
+- `firefox_wait_for` — Wait for element to appear
+- `firefox_scroll` — Scroll to element or position
+- `firefox_get_element` — Get element attributes, styles, visibility
+
 ### CLI Usage
 
 Control Firefox directly from the command line:
 
 ```bash
+# Browser control
 ./host/cli.js ping
 ./host/cli.js createWindow --url https://example.com
 ./host/cli.js navigate --url https://example.com
@@ -93,6 +113,14 @@ Control Firefox directly from the command line:
 ./host/cli.js type --selector "input[name=q]" --text "hello"
 ./host/cli.js screenshot
 ./host/cli.js closeWindow --windowId 123
+
+# DevTools
+./host/cli.js getConsoleLogs --level error      # See JS errors
+./host/cli.js getNetworkRequests --type xhr     # See API calls
+./host/cli.js evaluate --expression "document.title"
+./host/cli.js waitFor --selector ".loading-done"
+./host/cli.js scroll --selector "#footer"
+./host/cli.js getElementInfo --selector "button.submit"
 ```
 
 ### Browser Console

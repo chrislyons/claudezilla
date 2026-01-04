@@ -111,6 +111,14 @@ Page Commands:
   type --selector <sel> --text <text>  Type into input
   screenshot                    Capture screenshot (base64)
 
+DevTools Commands:
+  getConsoleLogs [--level error] [--clear true] [--limit 100]  Get console logs
+  getNetworkRequests [--type xhr] [--status error] [--limit 50]  Get network requests
+  evaluate --expression <js>    Execute JavaScript in page context
+  waitFor --selector <sel> [--timeout 10000]  Wait for element to appear
+  scroll [--selector <sel>] [--x 0] [--y 100]  Scroll to element or position
+  getElementInfo --selector <sel>  Get element attributes, styles, visibility
+
 Utility:
   ping                          Test connection
   version                       Get version info
@@ -120,6 +128,9 @@ Examples:
   claudezilla-cli createWindow --url https://example.com
   claudezilla-cli navigate --url https://example.com
   claudezilla-cli click --selector "button[type=submit]"
+  claudezilla-cli getConsoleLogs --level error    # See JS errors
+  claudezilla-cli evaluate --expression "document.title"
+  claudezilla-cli waitFor --selector ".loading-done"
   claudezilla-cli closeWindow --windowId 123
 `);
     process.exit(0);

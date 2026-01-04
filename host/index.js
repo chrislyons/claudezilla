@@ -21,6 +21,7 @@ const SOCKET_PATH = '/tmp/claudezilla.sock';
 
 // SECURITY: Whitelist of allowed commands
 const ALLOWED_COMMANDS = new Set([
+  // Core browser control
   'ping',
   'version',
   'navigate',
@@ -34,6 +35,13 @@ const ALLOWED_COMMANDS = new Set([
   'createWindow',
   'closeWindow',
   'getWindows',
+  // Devtools features
+  'getConsoleLogs',
+  'getNetworkRequests',
+  'scroll',
+  'waitFor',
+  'evaluate',
+  'getElementInfo',
 ]);
 
 // Log to stderr and debug file
@@ -106,9 +114,10 @@ function handleExtensionMessage(message) {
       id,
       success: true,
       result: {
-        host: '0.1.0',
+        host: '0.2.0',
         node: process.version,
         platform: process.platform,
+        features: ['devtools', 'network', 'console', 'evaluate'],
       },
     });
   }

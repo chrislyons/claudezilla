@@ -8,6 +8,12 @@
  * - Commands are specific, well-defined actions (not arbitrary code)
  * - Page content is returned as DATA, never interpreted as instructions
  * - All responses are structured JSON
+ *
+ * DEVTOOLS FEATURES:
+ * - Network request monitoring
+ * - Console log capture (via content script)
+ * - JavaScript evaluation
+ * - Element inspection
  */
 
 const NATIVE_HOST = 'claudezilla';
@@ -15,6 +21,97 @@ const NATIVE_HOST = 'claudezilla';
 let port = null;
 let messageId = 0;
 const pendingRequests = new Map();
+
+// Network request monitoring
+const networkRequests = [];
+const MAX_NETWORK_ENTRIES = 200;
+
+/**
+ * Monitor network requests using webRequest API
+ */
+browser.webRequest.onBeforeRequest.addListener(
+  (details) => {
+    const entry = {
+      requestId: details.requestId,
+      url: details.url,
+      method: details.method,
+      type: details.type,
+      tabId: details.tabId,
+      timestamp: details.timeStamp,
+      status: 'pending',
+    };
+    networkRequests.push(entry);
+    if (networkRequests.length > MAX_NETWORK_ENTRIES) {
+      networkRequests.shift();
+    }
+  },
+  { urls: ['<all_urls>'] },
+  ['requestBody']
+);
+
+browser.webRequest.onCompleted.addListener(
+  (details) => {
+    const entry = networkRequests.find(r => r.requestId === details.requestId);
+    if (entry) {
+      entry.status = 'completed';
+      entry.statusCode = details.statusCode;
+      entry.responseHeaders = details.responseHeaders;
+      entry.duration = details.timeStamp - entry.timestamp;
+    }
+  },
+  { urls: ['<all_urls>'] },
+  ['responseHeaders']
+);
+
+browser.webRequest.onErrorOccurred.addListener(
+  (details) => {
+    const entry = networkRequests.find(r => r.requestId === details.requestId);
+    if (entry) {
+      entry.status = 'error';
+      entry.error = details.error;
+      entry.duration = details.timeStamp - entry.timestamp;
+    }
+  },
+  { urls: ['<all_urls>'] }
+);
+
+/**
+ * Get captured network requests
+ * @param {object} params - Parameters
+ * @param {number} params.tabId - Filter by tab ID
+ * @param {string} params.type - Filter by type (xhr, script, stylesheet, image, etc.)
+ * @param {string} params.status - Filter by status (pending, completed, error)
+ * @param {boolean} params.clear - Clear logs after returning
+ * @param {number} params.limit - Max entries to return
+ * @returns {object} Network requests
+ */
+function getNetworkRequests(params = {}) {
+  const { tabId, type, status, clear = false, limit = 50 } = params;
+
+  let requests = [...networkRequests];
+
+  if (tabId !== undefined) {
+    requests = requests.filter(r => r.tabId === tabId);
+  }
+  if (type) {
+    requests = requests.filter(r => r.type === type);
+  }
+  if (status) {
+    requests = requests.filter(r => r.status === status);
+  }
+
+  requests = requests.slice(-limit);
+
+  if (clear) {
+    networkRequests.length = 0;
+  }
+
+  return {
+    requests,
+    total: networkRequests.length,
+    filtered: requests.length,
+  };
+}
 
 /**
  * Connect to native messaging host
@@ -164,8 +261,9 @@ async function handleCliCommand(message) {
 
       case 'version':
         result = {
-          extension: '0.1.0',
+          extension: '0.2.0',
           browser: navigator.userAgent,
+          features: ['devtools', 'network', 'console', 'evaluate'],
         };
         break;
 
@@ -263,6 +361,55 @@ async function handleCliCommand(message) {
         await requirePrivateWindow();
         const dataUrl = await browser.tabs.captureVisibleTab(null, { format: 'png' });
         result = { dataUrl };
+        break;
+      }
+
+      // ===== DEVTOOLS COMMANDS =====
+
+      case 'getConsoleLogs': {
+        // SECURITY: Require private window
+        const tab = await requirePrivateWindow();
+        const response = await executeInTab(tab.id, 'getConsoleLogs', params);
+        result = response.result;
+        break;
+      }
+
+      case 'getNetworkRequests': {
+        // Network requests are captured in background, filter by current tab
+        const tab = await requirePrivateWindow();
+        result = getNetworkRequests({ ...params, tabId: tab.id });
+        break;
+      }
+
+      case 'scroll': {
+        // SECURITY: Require private window
+        const tab = await requirePrivateWindow();
+        const response = await executeInTab(tab.id, 'scroll', params);
+        result = response.result;
+        break;
+      }
+
+      case 'waitFor': {
+        // SECURITY: Require private window
+        const tab = await requirePrivateWindow();
+        const response = await executeInTab(tab.id, 'waitFor', params);
+        result = response.result;
+        break;
+      }
+
+      case 'evaluate': {
+        // SECURITY: Require private window
+        const tab = await requirePrivateWindow();
+        const response = await executeInTab(tab.id, 'evaluate', params);
+        result = response.result;
+        break;
+      }
+
+      case 'getElementInfo': {
+        // SECURITY: Require private window
+        const tab = await requirePrivateWindow();
+        const response = await executeInTab(tab.id, 'getElementInfo', params);
+        result = response.result;
         break;
       }
 
