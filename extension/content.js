@@ -56,7 +56,7 @@ const CLAUDE_LOGO_SVG = `
 
   <!-- Master group with breathing animation (scales to fill container) -->
   <g id="claudezilla-breathe" style="transform-origin: center; transform-box: fill-box;">
-    <animateTransform attributeName="transform" type="scale" values="1.08;1.12;1.08" dur="4s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="scale" values="1.30;1.34;1.30" dur="4s" repeatCount="indefinite"/>
 
     <!-- LAYER 1: Tesseract frame -->
     <path d="M32 8 L54 18 L54 46 L32 56 L10 46 L10 18 Z"
