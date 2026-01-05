@@ -117,7 +117,7 @@ function initWatermark() {
   watermarkElement.style.cssText = `
     position: fixed;
     bottom: 16px;
-    right: 16px;
+    left: 16px;
     width: 84px;
     height: 84px;
     background: rgba(20, 18, 18, 0.94);
@@ -134,9 +134,24 @@ function initWatermark() {
       0 0 60px 12px rgba(209, 77, 50, 0.1),
       0 4px 16px rgba(0, 0, 0, 0.5),
       inset 0 0 0 1px rgba(209, 77, 50, 0.3);
-    pointer-events: none;
-    transition: opacity 0.3s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 0.3s ease, transform 0.15s ease;
   `;
+
+  // Click to open extension popup
+  watermarkElement.addEventListener('click', () => {
+    browser.runtime.sendMessage({ action: 'openPopup' });
+  });
+
+  // Hover effect
+  watermarkElement.addEventListener('mouseenter', () => {
+    watermarkElement.style.transform = 'scale(1.05)';
+  });
+  watermarkElement.addEventListener('mouseleave', () => {
+    watermarkElement.style.transform = 'scale(1)';
+  });
+
   document.body.appendChild(watermarkElement);
 }
 

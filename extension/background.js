@@ -1004,6 +1004,19 @@ browser.runtime.onMessage.addListener((message, sender) => {
           result = await sendToHost('version');
           break;
 
+        case 'openPopup':
+          // Open extension popup when watermark is clicked
+          // Firefox 57+ supports browserAction.openPopup()
+          try {
+            await browser.browserAction.openPopup();
+            result = { opened: true };
+          } catch (e) {
+            // Fallback: just acknowledge - popup can only be opened by user click on toolbar icon
+            console.log('[claudezilla] openPopup not available:', e.message);
+            result = { opened: false, reason: 'openPopup not supported in this context' };
+          }
+          break;
+
         case 'navigate': {
           const { url } = params;
           const tab = await browser.tabs.create({ url });
