@@ -727,27 +727,39 @@ async function handleCliCommand(message) {
       }
 
       case 'getContent': {
-        const { windowId, tabId: targetTab, ...contentParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...contentParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab (if specific tab requested)
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read content from');
+        }
         const response = await executeInTab(tabId, 'getContent', contentParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'click': {
-        const { windowId, tabId: targetTab, ...clickParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...clickParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'click in');
+        }
         const response = await executeInTab(tabId, 'click', clickParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'type': {
-        const { windowId, tabId: targetTab, ...typeParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...typeParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'type in');
+        }
         const response = await executeInTab(tabId, 'type', typeParams);
         result = { tabId, ...response.result };
         break;
@@ -756,8 +768,17 @@ async function handleCliCommand(message) {
       case 'screenshot': {
         // MUTEX: Serialize all screenshot requests to prevent tab-switching collisions
         // (captureVisibleTab only works on visible tab)
+        const { windowId, tabId: requestedTabId, agentId, quality = 60, scale = 0.5, format = 'jpeg' } = params;
+
+        // SECURITY: Verify agent owns the target tab before queuing screenshot
+        if (requestedTabId && agentId) {
+          verifyTabOwnership(requestedTabId, agentId, 'screenshot');
+        }
+
+        // Generate unique request ID for this screenshot to track through mutex
+        const screenshotRequestId = `ss_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
         const screenshotPromise = screenshotLock.then(async () => {
-          const { windowId, tabId: requestedTabId, quality = 60, scale = 0.5, format = 'jpeg' } = params;
           const session = await getSession(windowId);
 
           // Determine which tab to capture
@@ -771,8 +792,13 @@ async function handleCliCommand(message) {
           if (targetTabId && targetTabId !== activeTabId) {
             await browser.tabs.update(targetTabId, { active: true });
             activeTabId = targetTabId;
-            // Brief delay for tab to render
-            await new Promise(r => setTimeout(r, 100));
+            // Wait for tab to render - use longer delay for reliability
+            await new Promise(r => setTimeout(r, 150));
+            // Verify the tab is still active after delay (prevents race)
+            const [currentActive] = await browser.tabs.query({ active: true, windowId: session.windowId });
+            if (currentActive?.id !== targetTabId) {
+              throw new Error(`Screenshot race: tab ${targetTabId} was switched away during capture`);
+            }
           }
 
           // Capture with JPEG compression (much smaller than PNG)
@@ -815,80 +841,116 @@ async function handleCliCommand(message) {
       // All commands accept optional tabId to target specific tabs (background tabs work fine)
 
       case 'getConsoleLogs': {
-        const { windowId, tabId: targetTab, ...consoleParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...consoleParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read console from');
+        }
         const response = await executeInTab(tabId, 'getConsoleLogs', consoleParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getNetworkRequests': {
-        const { windowId, tabId: targetTab, ...networkParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...networkParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read network from');
+        }
         result = { tabId, ...getNetworkRequests({ ...networkParams, tabId }) };
         break;
       }
 
       case 'scroll': {
-        const { windowId, tabId: targetTab, ...scrollParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...scrollParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'scroll in');
+        }
         const response = await executeInTab(tabId, 'scroll', scrollParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'waitFor': {
-        const { windowId, tabId: targetTab, ...waitParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...waitParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'wait in');
+        }
         const response = await executeInTab(tabId, 'waitFor', waitParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'evaluate': {
-        const { windowId, tabId: targetTab, ...evalParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...evalParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab (evaluate is high-privilege)
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'evaluate in');
+        }
         const response = await executeInTab(tabId, 'evaluate', evalParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getElementInfo': {
-        const { windowId, tabId: targetTab, ...elementParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...elementParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'inspect element in');
+        }
         const response = await executeInTab(tabId, 'getElementInfo', elementParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getPageState': {
-        const { windowId, tabId: targetTab } = params;
+        const { windowId, tabId: targetTab, agentId } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read page state from');
+        }
         const response = await executeInTab(tabId, 'getPageState', {});
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getAccessibilitySnapshot': {
-        const { windowId, tabId: targetTab, ...a11yParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...a11yParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read accessibility from');
+        }
         const response = await executeInTab(tabId, 'getAccessibilitySnapshot', a11yParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'pressKey': {
-        const { windowId, tabId: targetTab, ...keyParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...keyParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'send keys to');
+        }
         const response = await executeInTab(tabId, 'pressKey', keyParams);
         result = { tabId, ...response.result };
         break;

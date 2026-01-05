@@ -630,8 +630,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     // SECURITY: Inject agent ID for tab ownership tracking
+    // All tab-targeting commands now require ownership verification
     const commandParams = { ...(args || {}) };
-    if (name === 'firefox_create_window' || name === 'firefox_close_tab' || name === 'firefox_close_window') {
+    const OWNERSHIP_COMMANDS = [
+      'firefox_create_window',
+      'firefox_close_tab',
+      'firefox_close_window',
+      'firefox_get_content',
+      'firefox_click',
+      'firefox_type',
+      'firefox_scroll',
+      'firefox_evaluate',
+      'firefox_get_element',
+      'firefox_get_console',
+      'firefox_get_network',
+      'firefox_wait_for',
+      'firefox_get_page_state',
+      'firefox_get_accessibility_snapshot',
+      'firefox_press_key',
+      'firefox_screenshot',
+    ];
+    if (OWNERSHIP_COMMANDS.includes(name)) {
       commandParams.agentId = AGENT_ID;
     }
 

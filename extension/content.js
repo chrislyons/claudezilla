@@ -198,21 +198,22 @@ function initFocusglow() {
  * @param {string} selector - CSS selector of target element
  */
 function moveFocusTo(selector) {
-  console.log('[claudezilla] moveFocusTo called:', selector, 'showFocusglow:', settings.showFocusglow, 'element exists:', !!focusglowElement);
-
   if (!settings.showFocusglow || !focusglowElement) {
-    console.log('[claudezilla] moveFocusTo early return - settings:', settings.showFocusglow, 'element:', !!focusglowElement);
     return;
   }
 
-  const el = document.querySelector(selector);
+  // Safe selector query - don't throw on invalid, just skip
+  let el;
+  try {
+    el = document.querySelector(selector);
+  } catch (e) {
+    return; // Invalid selector, skip focus glow
+  }
   if (!el) {
-    console.log('[claudezilla] moveFocusTo - element not found:', selector);
     return;
   }
 
   const rect = el.getBoundingClientRect();
-  console.log('[claudezilla] moveFocusTo - positioning glow at:', rect.top, rect.left, rect.width, rect.height);
   focusglowElement.style.display = 'block';
   focusglowElement.style.top = `${rect.top + window.scrollY - 4}px`;
   focusglowElement.style.left = `${rect.left + window.scrollX - 4}px`;
@@ -303,10 +304,13 @@ function initVisuals() {
 // initVisuals() will be called via 'enableClaudezillaVisuals' message from background.js
 
 // ===== CONSOLE LOG CAPTURE =====
+// SECURITY: Console capture is OPT-IN to prevent leaking sensitive data
+// Call enableConsoleCapture() to start capturing, or it auto-enables on first getConsoleLogs call
 
-// Console log capture
+// Console log capture state
 const capturedLogs = [];
 const MAX_LOGS = 500;
+let consoleCapureEnabled = false;
 
 const originalConsole = {
   log: console.log.bind(console),
@@ -317,6 +321,9 @@ const originalConsole = {
 };
 
 function captureLog(level, args) {
+  // Only capture if enabled
+  if (!consoleCapureEnabled) return;
+
   const entry = {
     level,
     timestamp: Date.now(),
@@ -337,24 +344,36 @@ function captureLog(level, args) {
   }
 }
 
-// Override console methods
-console.log = (...args) => { captureLog('log', args); originalConsole.log(...args); };
-console.warn = (...args) => { captureLog('warn', args); originalConsole.warn(...args); };
-console.error = (...args) => { captureLog('error', args); originalConsole.error(...args); };
-console.info = (...args) => { captureLog('info', args); originalConsole.info(...args); };
-console.debug = (...args) => { captureLog('debug', args); originalConsole.debug(...args); };
+/**
+ * SECURITY: Enable console capture (opt-in)
+ * Only captures logs after this is called
+ */
+function enableConsoleCapture() {
+  if (consoleCapureEnabled) return;
+  consoleCapureEnabled = true;
 
-// Capture uncaught errors
-window.addEventListener('error', (event) => {
-  captureLog('error', [`Uncaught Error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`]);
-});
+  // Override console methods
+  console.log = (...args) => { captureLog('log', args); originalConsole.log(...args); };
+  console.warn = (...args) => { captureLog('warn', args); originalConsole.warn(...args); };
+  console.error = (...args) => { captureLog('error', args); originalConsole.error(...args); };
+  console.info = (...args) => { captureLog('info', args); originalConsole.info(...args); };
+  console.debug = (...args) => { captureLog('debug', args); originalConsole.debug(...args); };
 
-window.addEventListener('unhandledrejection', (event) => {
-  captureLog('error', [`Unhandled Promise Rejection: ${event.reason}`]);
-});
+  // Capture uncaught errors
+  window.addEventListener('error', (event) => {
+    captureLog('error', [`Uncaught Error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`]);
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    captureLog('error', [`Unhandled Promise Rejection: ${event.reason}`]);
+  });
+
+  originalConsole.log('[claudezilla] Console capture enabled');
+}
 
 /**
  * Get captured console logs
+ * SECURITY: Auto-enables capture on first call (opt-in behavior)
  * @param {object} params - Parameters
  * @param {string} params.level - Filter by level (log, warn, error, info, debug)
  * @param {boolean} params.clear - Clear logs after returning
@@ -362,6 +381,12 @@ window.addEventListener('unhandledrejection', (event) => {
  * @returns {object} Console logs
  */
 function getConsoleLogs(params = {}) {
+  // SECURITY: Auto-enable capture on first request
+  // This makes capture opt-in - logs are only captured after first getConsoleLogs call
+  if (!consoleCapureEnabled) {
+    enableConsoleCapture();
+  }
+
   const { level, clear = false, limit = 100 } = params;
 
   let logs = [...capturedLogs];
@@ -380,7 +405,49 @@ function getConsoleLogs(params = {}) {
     logs,
     total: capturedLogs.length,
     filtered: logs.length,
+    captureEnabled: consoleCapureEnabled,
   };
+}
+
+/**
+ * SECURITY: Validate CSS selector syntax before use
+ * Prevents selector injection and handles malformed selectors gracefully
+ * @param {string} selector - CSS selector to validate
+ * @returns {boolean} True if valid
+ * @throws {Error} If selector is invalid
+ */
+function validateSelector(selector) {
+  if (!selector || typeof selector !== 'string') {
+    throw new Error('selector is required and must be a string');
+  }
+
+  // Reject empty or whitespace-only selectors
+  if (!selector.trim()) {
+    throw new Error('selector cannot be empty');
+  }
+
+  // Reject excessively long selectors (potential DoS)
+  if (selector.length > 1000) {
+    throw new Error('selector too long (max 1000 characters)');
+  }
+
+  // Test selector validity by attempting to use it
+  try {
+    document.querySelector(selector);
+    return true;
+  } catch (e) {
+    throw new Error(`Invalid CSS selector: ${e.message}`);
+  }
+}
+
+/**
+ * SECURITY: Query element with validated selector
+ * @param {string} selector - CSS selector
+ * @returns {Element|null} Found element or null
+ */
+function safeQuerySelector(selector) {
+  validateSelector(selector);
+  return document.querySelector(selector);
 }
 
 /**
@@ -396,7 +463,8 @@ function scroll(params = {}) {
   const { selector, x, y, behavior = 'smooth' } = params;
 
   if (selector) {
-    const element = document.querySelector(selector);
+    // SECURITY: Validate selector before use
+    const element = safeQuerySelector(selector);
     if (!element) {
       throw new Error(`Element not found: ${selector}`);
     }
@@ -442,9 +510,8 @@ function scroll(params = {}) {
 async function waitFor(params) {
   const { selector, timeout = 10000, interval = 100 } = params;
 
-  if (!selector) {
-    throw new Error('selector is required');
-  }
+  // SECURITY: Validate selector before use
+  validateSelector(selector);
 
   const startTime = Date.now();
 
@@ -514,11 +581,8 @@ function evaluate(params) {
 function getElementInfo(params) {
   const { selector } = params;
 
-  if (!selector) {
-    throw new Error('selector is required');
-  }
-
-  const element = document.querySelector(selector);
+  // SECURITY: Validate selector before use
+  const element = safeQuerySelector(selector);
   if (!element) {
     throw new Error(`Element not found: ${selector}`);
   }
@@ -574,7 +638,8 @@ function getContent(params = {}) {
   }
 
   if (selector) {
-    const element = document.querySelector(selector);
+    // SECURITY: Validate selector before use
+    const element = safeQuerySelector(selector);
     if (!element) {
       throw new Error(`Element not found: ${selector}`);
     }
@@ -622,11 +687,8 @@ function getContent(params = {}) {
 function click(params) {
   const { selector } = params;
 
-  if (!selector) {
-    throw new Error('selector is required');
-  }
-
-  const element = document.querySelector(selector);
+  // SECURITY: Validate selector before use
+  const element = safeQuerySelector(selector);
   if (!element) {
     throw new Error(`Element not found: ${selector}`);
   }
@@ -658,15 +720,12 @@ function click(params) {
 function type(params) {
   const { selector, text, clear = true } = params;
 
-  if (!selector) {
-    throw new Error('selector is required');
-  }
-
   if (text === undefined) {
     throw new Error('text is required');
   }
 
-  const element = document.querySelector(selector);
+  // SECURITY: Validate selector before use
+  const element = safeQuerySelector(selector);
   if (!element) {
     throw new Error(`Element not found: ${selector}`);
   }
@@ -845,7 +904,8 @@ function getPageState(params = {}) {
  */
 function getAccessibilitySnapshot(params = {}) {
   const { maxDepth = 5, maxNodes = 200, selector = 'body' } = params;
-  const root = document.querySelector(selector);
+  // SECURITY: Validate selector before use (default 'body' is always valid)
+  const root = selector === 'body' ? document.body : safeQuerySelector(selector);
   if (!root) throw new Error(`Element not found: ${selector}`);
 
   let nodeCount = 0;
@@ -1000,7 +1060,8 @@ function pressKey(params) {
   // Get target element
   let target;
   if (selector) {
-    target = document.querySelector(selector);
+    // SECURITY: Validate selector before use
+    target = safeQuerySelector(selector);
     if (!target) {
       throw new Error(`Element not found: ${selector}`);
     }

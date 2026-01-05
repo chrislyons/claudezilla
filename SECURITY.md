@@ -123,6 +123,36 @@ Network monitoring excludes sensitive data:
 
 **Why:** Prevents credential leakage through monitoring features.
 
+### 9. Content Command Ownership (v0.4.5)
+
+All commands that interact with tab content verify ownership:
+
+- **Protected commands:** getContent, click, type, scroll, waitFor, evaluate, getElementInfo, getPageState, getAccessibilitySnapshot, pressKey, getConsoleLogs, getNetworkRequests, screenshot
+- **Enforcement:** Agent ID must match tab owner or tab must be unowned ('unknown')
+- **Error response:** `OWNERSHIP: Cannot <operation> tab X (owned by agent_Y)`
+
+**Why:** Prevents cross-agent data exfiltration and unauthorized DOM manipulation.
+
+### 10. Console Capture Opt-In (v0.4.5)
+
+Console log capture is disabled by default:
+
+- **Default state:** No console interception active
+- **Activation:** First `getConsoleLogs` call enables capture for that tab
+- **Scope:** Per-page; reloads reset capture state
+
+**Why:** Prevents inadvertent capture of sensitive data logged by page scripts (API keys, tokens, debug info).
+
+### 11. CSS Selector Validation (v0.4.5)
+
+All CSS selectors are validated before use:
+
+- **Length limit:** Maximum 1000 characters
+- **Syntax check:** Validated via `document.querySelector()` in try/catch
+- **Sanitized output:** Invalid selectors throw descriptive errors
+
+**Why:** Prevents selector injection and DoS via malformed selectors.
+
 ## Prompt Injection Mitigation
 
 ### The Risk
@@ -180,6 +210,10 @@ If you discover a security vulnerability, please report it to: security@boot.ind
   - TMPDIR hijacking prevented via XDG_RUNTIME_DIR
   - Install script permissions explicit (755/644)
   - UUID-based request IDs prevent collision
+  - Content commands require tab ownership verification
+  - Console capture made opt-in (disabled by default)
+  - CSS selector validation with length limits
+  - Screenshot race condition fixed with tab verification
 - **0.4.4:** Multi-agent safety with tab ownership and screenshot mutex
 - **0.4.3:** Payload optimization and tab pool management
 - **0.3.0:** Auto-detect "Run in Private Windows" permission, disable navigate when enabled to prevent non-private window creation
