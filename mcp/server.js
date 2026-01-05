@@ -427,6 +427,41 @@ const TOOLS = [
       required: ['selector'],
     },
   },
+  // ===== PAGE ANALYSIS (FAST ALTERNATIVES TO SCREENSHOTS) =====
+  {
+    name: 'firefox_get_page_state',
+    description: 'Get structured page state as JSON. Much faster than screenshots for understanding page content. Returns: URL, title, viewport, errors, headings, links, buttons, inputs, images, landmarks. Use this instead of screenshots when you need to understand what is on the page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        windowId: {
+          type: 'number',
+          description: 'Target window ID (from firefox_create_window). Optional if only one window.',
+        },
+      },
+    },
+  },
+  {
+    name: 'firefox_get_accessibility_snapshot',
+    description: 'Get accessibility tree snapshot. Returns semantic structure of the page as screen readers see it. Includes roles, names, states (disabled, checked, expanded), and values. Faster and more accurate than screenshots for form state and interactive elements.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        windowId: {
+          type: 'number',
+          description: 'Target window ID (from firefox_create_window). Optional if only one window.',
+        },
+        maxDepth: {
+          type: 'number',
+          description: 'Maximum tree depth to traverse (default: 5)',
+        },
+        selector: {
+          type: 'string',
+          description: 'CSS selector for root element (default: body)',
+        },
+      },
+    },
+  },
 ];
 
 // Map MCP tool names to Claudezilla commands
@@ -449,6 +484,9 @@ const TOOL_TO_COMMAND = {
   firefox_wait_for: 'waitFor',
   firefox_scroll: 'scroll',
   firefox_get_element: 'getElementInfo',
+  // Page analysis
+  firefox_get_page_state: 'getPageState',
+  firefox_get_accessibility_snapshot: 'getAccessibilitySnapshot',
 };
 
 // Create MCP server

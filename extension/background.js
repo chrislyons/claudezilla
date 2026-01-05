@@ -574,6 +574,22 @@ async function handleCliCommand(message) {
         break;
       }
 
+      case 'getPageState': {
+        const { windowId } = params;
+        const session = await getSession(windowId);
+        const response = await executeInTab(session.tabId, 'getPageState', {});
+        result = response.result;
+        break;
+      }
+
+      case 'getAccessibilitySnapshot': {
+        const { windowId, ...a11yParams } = params;
+        const session = await getSession(windowId);
+        const response = await executeInTab(session.tabId, 'getAccessibilitySnapshot', a11yParams);
+        result = response.result;
+        break;
+      }
+
       default:
         throw new Error(`Unknown command: ${command}`);
     }

@@ -47,6 +47,9 @@ const ALLOWED_COMMANDS = new Set([
   'waitFor',
   'evaluate',
   'getElementInfo',
+  // Page analysis (fast alternatives to screenshots)
+  'getPageState',
+  'getAccessibilitySnapshot',
 ]);
 
 // Log to stderr and debug file

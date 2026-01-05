@@ -372,6 +372,227 @@ function type(params) {
 }
 
 /**
+ * Get structured page state (fast alternative to screenshots)
+ * @returns {object} Page state
+ */
+function getPageState() {
+  const state = {
+    url: window.location.href,
+    title: document.title,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+      scrollHeight: document.documentElement.scrollHeight,
+    },
+    errors: capturedLogs.filter(l => l.level === 'error').slice(-10).map(l => l.message),
+    headings: [],
+    links: [],
+    buttons: [],
+    inputs: [],
+    images: [],
+    landmarks: [],
+  };
+
+  // Headings
+  document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(el => {
+    const text = el.textContent?.trim();
+    if (text) {
+      state.headings.push({ level: el.tagName.toLowerCase(), text: text.slice(0, 100) });
+    }
+  });
+
+  // Links (visible, with text)
+  document.querySelectorAll('a[href]').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      const text = el.textContent?.trim() || el.getAttribute('aria-label') || '';
+      if (text) {
+        state.links.push({
+          text: text.slice(0, 50),
+          href: el.getAttribute('href')?.slice(0, 100),
+        });
+      }
+    }
+  });
+  state.links = state.links.slice(0, 30);
+
+  // Buttons
+  document.querySelectorAll('button, [role="button"], input[type="submit"], input[type="button"]').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      state.buttons.push({
+        text: (el.textContent?.trim() || el.value || el.getAttribute('aria-label') || '').slice(0, 50),
+        disabled: el.disabled || el.getAttribute('aria-disabled') === 'true',
+        type: el.type || 'button',
+      });
+    }
+  });
+  state.buttons = state.buttons.slice(0, 20);
+
+  // Form inputs
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    if (el.type === 'hidden') return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      state.inputs.push({
+        type: el.type || el.tagName.toLowerCase(),
+        name: el.name || el.id || '',
+        label: el.getAttribute('aria-label') || el.placeholder || document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() || '',
+        value: el.type === 'password' ? '***' : (el.value?.slice(0, 50) || ''),
+        required: el.required,
+        disabled: el.disabled,
+      });
+    }
+  });
+  state.inputs = state.inputs.slice(0, 20);
+
+  // Images with alt text
+  document.querySelectorAll('img[alt]').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 20 && rect.height > 20) {
+      state.images.push({
+        alt: el.alt.slice(0, 100),
+        src: el.src?.slice(0, 100),
+      });
+    }
+  });
+  state.images = state.images.slice(0, 15);
+
+  // ARIA landmarks
+  document.querySelectorAll('[role="main"], [role="navigation"], [role="banner"], [role="contentinfo"], [role="search"], [role="form"], main, nav, header, footer, aside').forEach(el => {
+    state.landmarks.push({
+      role: el.getAttribute('role') || el.tagName.toLowerCase(),
+      label: el.getAttribute('aria-label') || '',
+    });
+  });
+
+  return state;
+}
+
+/**
+ * Get accessibility tree snapshot
+ * @param {object} params - Parameters
+ * @param {number} params.maxDepth - Max tree depth (default: 5)
+ * @param {string} params.selector - Root element selector (default: body)
+ * @returns {object} Accessibility tree
+ */
+function getAccessibilitySnapshot(params = {}) {
+  const { maxDepth = 5, selector = 'body' } = params;
+  const root = document.querySelector(selector);
+  if (!root) throw new Error(`Element not found: ${selector}`);
+
+  function getAccessibleName(el) {
+    return el.getAttribute('aria-label') ||
+           el.getAttribute('aria-labelledby') && document.getElementById(el.getAttribute('aria-labelledby'))?.textContent?.trim() ||
+           el.getAttribute('title') ||
+           el.getAttribute('alt') ||
+           (el.tagName === 'INPUT' && el.placeholder) ||
+           (el.tagName === 'IMG' && el.alt) ||
+           (el.labels?.[0]?.textContent?.trim()) ||
+           '';
+  }
+
+  function getRole(el) {
+    const explicit = el.getAttribute('role');
+    if (explicit) return explicit;
+
+    // Implicit roles
+    const tag = el.tagName.toLowerCase();
+    const roleMap = {
+      'a': el.href ? 'link' : null,
+      'button': 'button',
+      'input': el.type === 'checkbox' ? 'checkbox' : el.type === 'radio' ? 'radio' : el.type === 'submit' ? 'button' : 'textbox',
+      'select': 'combobox',
+      'textarea': 'textbox',
+      'img': 'img',
+      'nav': 'navigation',
+      'main': 'main',
+      'header': 'banner',
+      'footer': 'contentinfo',
+      'aside': 'complementary',
+      'form': 'form',
+      'table': 'table',
+      'ul': 'list',
+      'ol': 'list',
+      'li': 'listitem',
+      'h1': 'heading',
+      'h2': 'heading',
+      'h3': 'heading',
+      'h4': 'heading',
+      'h5': 'heading',
+      'h6': 'heading',
+    };
+    return roleMap[tag] || null;
+  }
+
+  function walkTree(el, depth = 0) {
+    if (depth > maxDepth) return null;
+
+    const rect = el.getBoundingClientRect();
+    const isVisible = rect.width > 0 && rect.height > 0 &&
+                      window.getComputedStyle(el).display !== 'none' &&
+                      window.getComputedStyle(el).visibility !== 'hidden';
+
+    if (!isVisible && el !== root) return null;
+
+    const role = getRole(el);
+    const name = getAccessibleName(el);
+    const text = el.childNodes.length === 1 && el.childNodes[0].nodeType === 3
+                 ? el.textContent?.trim().slice(0, 100)
+                 : '';
+
+    // Skip non-semantic elements without accessible info
+    if (!role && !name && !text && el.tagName.match(/^(DIV|SPAN|P)$/i)) {
+      // But still process children
+      const children = [];
+      for (const child of el.children) {
+        const node = walkTree(child, depth);
+        if (node) children.push(node);
+      }
+      return children.length === 1 ? children[0] : (children.length > 1 ? { children } : null);
+    }
+
+    const node = {};
+    if (role) node.role = role;
+    if (name) node.name = name;
+    if (text) node.text = text;
+
+    // State
+    if (el.disabled) node.disabled = true;
+    if (el.checked) node.checked = true;
+    if (el.getAttribute('aria-expanded')) node.expanded = el.getAttribute('aria-expanded') === 'true';
+    if (el.getAttribute('aria-selected')) node.selected = el.getAttribute('aria-selected') === 'true';
+    if (el.value && el.tagName.match(/^(INPUT|TEXTAREA|SELECT)$/i) && el.type !== 'password') {
+      node.value = el.value.slice(0, 50);
+    }
+
+    // Children
+    const children = [];
+    for (const child of el.children) {
+      const childNode = walkTree(child, depth + 1);
+      if (childNode) {
+        if (Array.isArray(childNode)) {
+          children.push(...childNode);
+        } else {
+          children.push(childNode);
+        }
+      }
+    }
+    if (children.length > 0) node.children = children.slice(0, 50);
+
+    return Object.keys(node).length > 0 ? node : null;
+  }
+
+  return {
+    url: window.location.href,
+    title: document.title,
+    tree: walkTree(root),
+  };
+}
+
+/**
  * Handle messages from background script
  */
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -413,6 +634,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case 'getElementInfo':
           result = getElementInfo(params);
+          break;
+
+        case 'getPageState':
+          result = getPageState();
+          break;
+
+        case 'getAccessibilitySnapshot':
+          result = getAccessibilitySnapshot(params);
           break;
 
         default:
