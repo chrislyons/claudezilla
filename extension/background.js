@@ -41,14 +41,81 @@ const sessions = new Map();
 const networkRequests = [];
 const MAX_NETWORK_ENTRIES = 200;
 
+// SECURITY: Allowed URL schemes for navigation
+const ALLOWED_URL_SCHEMES = ['http:', 'https:', 'about:'];
+
+// SECURITY: Sensitive query parameter patterns to redact
+const SENSITIVE_PARAMS = ['password', 'passwd', 'pwd', 'token', 'api_key', 'apikey', 'secret', 'auth', 'key', 'credential'];
+
+/**
+ * SECURITY: Redact sensitive query parameters from URLs
+ * Prevents leaking passwords, tokens, API keys in logs/captures
+ */
+function redactSensitiveUrl(url) {
+  try {
+    const parsed = new URL(url);
+    let redacted = false;
+    for (const [key] of parsed.searchParams) {
+      if (SENSITIVE_PARAMS.some(p => key.toLowerCase().includes(p))) {
+        parsed.searchParams.set(key, '[REDACTED]');
+        redacted = true;
+      }
+    }
+    return redacted ? parsed.toString() : url;
+  } catch (e) {
+    return url; // Return as-is if not parseable
+  }
+}
+
+/**
+ * SECURITY: Validate URL scheme before navigation
+ * Prevents javascript:, data:, file:// injection attacks
+ */
+function validateUrlScheme(url) {
+  if (!url || url === 'about:blank') return true;
+  try {
+    const parsed = new URL(url);
+    if (!ALLOWED_URL_SCHEMES.includes(parsed.protocol)) {
+      throw new Error(`URL scheme not allowed: ${parsed.protocol}. Allowed: ${ALLOWED_URL_SCHEMES.join(', ')}`);
+    }
+    return true;
+  } catch (e) {
+    if (e.message.includes('URL scheme not allowed')) throw e;
+    throw new Error(`Invalid URL: ${e.message}`);
+  }
+}
+
+/**
+ * SECURITY: Verify agent owns the target tab before operations
+ * Prevents cross-agent tab interference
+ */
+function verifyTabOwnership(tabId, agentId, operation) {
+  if (!claudezillaWindow) {
+    throw new Error('No Claudezilla window active');
+  }
+  const tabEntry = claudezillaWindow.tabs.find(t => t.tabId === tabId);
+  if (!tabEntry) {
+    throw new Error(`Tab ${tabId} not found in Claudezilla window`);
+  }
+  // Allow operations on tabs with 'unknown' owner (legacy compatibility)
+  // But if both have IDs and they don't match, deny
+  if (tabEntry.ownerId !== 'unknown' && agentId && tabEntry.ownerId !== agentId) {
+    throw new Error(`OWNERSHIP: Cannot ${operation} tab ${tabId} (owned by ${tabEntry.ownerId}, you are ${agentId})`);
+  }
+  return tabEntry;
+}
+
 /**
  * Monitor network requests using webRequest API
  */
+// SECURITY: Do NOT capture requestBody - it may contain passwords, tokens, credit cards
+// Only capture metadata (URL, method, type) for debugging purposes
 browser.webRequest.onBeforeRequest.addListener(
   (details) => {
     const entry = {
       requestId: details.requestId,
-      url: details.url,
+      // SECURITY: Redact query params that may contain sensitive data
+      url: redactSensitiveUrl(details.url),
       method: details.method,
       type: details.type,
       tabId: details.tabId,
@@ -60,8 +127,8 @@ browser.webRequest.onBeforeRequest.addListener(
       networkRequests.shift();
     }
   },
-  { urls: ['<all_urls>'] },
-  ['requestBody']
+  { urls: ['<all_urls>'] }
+  // SECURITY: Removed 'requestBody' - prevents capturing sensitive POST data
 );
 
 browser.webRequest.onCompleted.addListener(
@@ -311,9 +378,9 @@ async function handleCliCommand(message) {
 
       case 'version':
         result = {
-          extension: '0.4.4',
+          extension: '0.4.5',
           browser: navigator.userAgent,
-          features: ['devtools', 'network', 'console', 'evaluate', 'focusglow', 'tabgroups'],
+          features: ['devtools', 'network', 'console', 'evaluate', 'focusglow', 'tabgroups', 'security-hardened'],
         };
         break;
 
@@ -327,6 +394,9 @@ async function handleCliCommand(message) {
       case 'navigate': {
         const { url } = params;
         if (!url) throw new Error('url is required');
+
+        // SECURITY: Validate URL scheme (blocks javascript:, data:, file://)
+        validateUrlScheme(url);
 
         // SECURITY: Disable navigate when extension is allowed in private windows
         // to prevent agents from creating non-private windows
@@ -384,6 +454,11 @@ async function handleCliCommand(message) {
         // Tab ownership: each tab tracks its creator agent for close permission
         const { url, agentId } = params;
         const ownerId = agentId || 'unknown';
+
+        // SECURITY: Validate URL scheme (blocks javascript:, data:, file://)
+        if (url) {
+          validateUrlScheme(url);
+        }
         let tabId;
         let isNewWindow = false;
         let closedTabId = null;
@@ -493,6 +568,11 @@ async function handleCliCommand(message) {
           throw new Error('tabId is required');
         }
 
+        // SECURITY: Require agentId for ownership verification
+        if (!agentId) {
+          throw new Error('agentId is required for tab close operations');
+        }
+
         if (!claudezillaWindow) {
           throw new Error('No Claudezilla window active');
         }
@@ -503,8 +583,10 @@ async function handleCliCommand(message) {
           throw new Error(`Tab ${closeTabId} not found in Claudezilla window. Available tabs: ${availableTabs}`);
         }
 
-        // OWNERSHIP CHECK: Only the creator can close the tab
-        if (tabEntry.ownerId !== 'unknown' && agentId && tabEntry.ownerId !== agentId) {
+        // SECURITY: Ownership check - agents can only close their own tabs
+        // Note: 'unknown' ownership allows any agent to close (legacy tabs created without agentId)
+        // This is intentional for backward compatibility, but new tabs always have agentId
+        if (tabEntry.ownerId !== 'unknown' && tabEntry.ownerId !== agentId) {
           throw new Error(`OWNERSHIP: Tab ${closeTabId} was created by ${tabEntry.ownerId}. You (${agentId}) cannot close another agent's tab.`);
         }
 
@@ -531,8 +613,20 @@ async function handleCliCommand(message) {
 
       case 'closeWindow': {
         // Close the entire Claudezilla window - WARNING: affects all agents
+        const { agentId } = params;
+
         if (!claudezillaWindow) {
           throw new Error('No Claudezilla window to close');
+        }
+
+        // SECURITY: Check if agent owns all tabs or if there are no other owners
+        const tabOwners = new Set(claudezillaWindow.tabs.map(t => t.ownerId).filter(o => o !== 'unknown'));
+        const hasMultipleOwners = tabOwners.size > 1;
+        const isOnlyOwner = tabOwners.size === 0 || (tabOwners.size === 1 && tabOwners.has(agentId));
+
+        if (hasMultipleOwners && !isOnlyOwner && agentId) {
+          const otherOwners = [...tabOwners].filter(o => o !== agentId);
+          throw new Error(`OWNERSHIP: Cannot close window - other agents have tabs open: ${otherOwners.join(', ')}. Use firefox_close_tab to close your own tabs.`);
         }
 
         const winId = claudezillaWindow.windowId;
@@ -633,27 +727,39 @@ async function handleCliCommand(message) {
       }
 
       case 'getContent': {
-        const { windowId, tabId: targetTab, ...contentParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...contentParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab (if specific tab requested)
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read content from');
+        }
         const response = await executeInTab(tabId, 'getContent', contentParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'click': {
-        const { windowId, tabId: targetTab, ...clickParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...clickParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'click in');
+        }
         const response = await executeInTab(tabId, 'click', clickParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'type': {
-        const { windowId, tabId: targetTab, ...typeParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...typeParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'type in');
+        }
         const response = await executeInTab(tabId, 'type', typeParams);
         result = { tabId, ...response.result };
         break;
@@ -662,8 +768,17 @@ async function handleCliCommand(message) {
       case 'screenshot': {
         // MUTEX: Serialize all screenshot requests to prevent tab-switching collisions
         // (captureVisibleTab only works on visible tab)
+        const { windowId, tabId: requestedTabId, agentId, quality = 60, scale = 0.5, format = 'jpeg' } = params;
+
+        // SECURITY: Verify agent owns the target tab before queuing screenshot
+        if (requestedTabId && agentId) {
+          verifyTabOwnership(requestedTabId, agentId, 'screenshot');
+        }
+
+        // Generate unique request ID for this screenshot to track through mutex
+        const screenshotRequestId = `ss_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
         const screenshotPromise = screenshotLock.then(async () => {
-          const { windowId, tabId: requestedTabId, quality = 60, scale = 0.5, format = 'jpeg' } = params;
           const session = await getSession(windowId);
 
           // Determine which tab to capture
@@ -677,8 +792,13 @@ async function handleCliCommand(message) {
           if (targetTabId && targetTabId !== activeTabId) {
             await browser.tabs.update(targetTabId, { active: true });
             activeTabId = targetTabId;
-            // Brief delay for tab to render
-            await new Promise(r => setTimeout(r, 100));
+            // Wait for tab to render - use longer delay for reliability
+            await new Promise(r => setTimeout(r, 150));
+            // Verify the tab is still active after delay (prevents race)
+            const [currentActive] = await browser.tabs.query({ active: true, windowId: session.windowId });
+            if (currentActive?.id !== targetTabId) {
+              throw new Error(`Screenshot race: tab ${targetTabId} was switched away during capture`);
+            }
           }
 
           // Capture with JPEG compression (much smaller than PNG)
@@ -721,80 +841,116 @@ async function handleCliCommand(message) {
       // All commands accept optional tabId to target specific tabs (background tabs work fine)
 
       case 'getConsoleLogs': {
-        const { windowId, tabId: targetTab, ...consoleParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...consoleParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read console from');
+        }
         const response = await executeInTab(tabId, 'getConsoleLogs', consoleParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getNetworkRequests': {
-        const { windowId, tabId: targetTab, ...networkParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...networkParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read network from');
+        }
         result = { tabId, ...getNetworkRequests({ ...networkParams, tabId }) };
         break;
       }
 
       case 'scroll': {
-        const { windowId, tabId: targetTab, ...scrollParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...scrollParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'scroll in');
+        }
         const response = await executeInTab(tabId, 'scroll', scrollParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'waitFor': {
-        const { windowId, tabId: targetTab, ...waitParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...waitParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'wait in');
+        }
         const response = await executeInTab(tabId, 'waitFor', waitParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'evaluate': {
-        const { windowId, tabId: targetTab, ...evalParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...evalParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab (evaluate is high-privilege)
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'evaluate in');
+        }
         const response = await executeInTab(tabId, 'evaluate', evalParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getElementInfo': {
-        const { windowId, tabId: targetTab, ...elementParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...elementParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'inspect element in');
+        }
         const response = await executeInTab(tabId, 'getElementInfo', elementParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getPageState': {
-        const { windowId, tabId: targetTab } = params;
+        const { windowId, tabId: targetTab, agentId } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read page state from');
+        }
         const response = await executeInTab(tabId, 'getPageState', {});
         result = { tabId, ...response.result };
         break;
       }
 
       case 'getAccessibilitySnapshot': {
-        const { windowId, tabId: targetTab, ...a11yParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...a11yParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'read accessibility from');
+        }
         const response = await executeInTab(tabId, 'getAccessibilitySnapshot', a11yParams);
         result = { tabId, ...response.result };
         break;
       }
 
       case 'pressKey': {
-        const { windowId, tabId: targetTab, ...keyParams } = params;
+        const { windowId, tabId: targetTab, agentId, ...keyParams } = params;
         const session = await getSession(windowId);
         const tabId = targetTab || session.tabId;
+        // SECURITY: Verify agent owns the target tab
+        if (targetTab && agentId) {
+          verifyTabOwnership(targetTab, agentId, 'send keys to');
+        }
         const response = await executeInTab(tabId, 'pressKey', keyParams);
         result = { tabId, ...response.result };
         break;

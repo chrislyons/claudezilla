@@ -20,9 +20,10 @@ import { randomBytes } from 'crypto';
 
 const SOCKET_PATH = join(tmpdir(), 'claudezilla.sock');
 
-// Unique agent ID for this MCP server instance
+// SECURITY: Unique agent ID with 128-bit entropy (16 bytes = 32 hex chars)
 // Used for tab ownership tracking - only the agent that created a tab can close it
-const AGENT_ID = `agent_${randomBytes(4).toString('hex')}_${process.pid}`;
+// Previous: 4 bytes (32 bits) was too weak and predictable
+const AGENT_ID = `agent_${randomBytes(16).toString('hex')}_${process.pid}`;
 
 /**
  * Send command to Claudezilla via Unix socket
@@ -592,7 +593,7 @@ const TOOL_TO_COMMAND = {
 const server = new Server(
   {
     name: 'claudezilla',
-    version: '0.4.4',
+    version: '0.4.5',
   },
   {
     capabilities: {
@@ -628,9 +629,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   try {
-    // Inject agent ID for tab ownership tracking
+    // SECURITY: Inject agent ID for tab ownership tracking
+    // All tab-targeting commands now require ownership verification
     const commandParams = { ...(args || {}) };
-    if (name === 'firefox_create_window' || name === 'firefox_close_tab') {
+    const OWNERSHIP_COMMANDS = [
+      'firefox_create_window',
+      'firefox_close_tab',
+      'firefox_close_window',
+      'firefox_get_content',
+      'firefox_click',
+      'firefox_type',
+      'firefox_scroll',
+      'firefox_evaluate',
+      'firefox_get_element',
+      'firefox_get_console',
+      'firefox_get_network',
+      'firefox_wait_for',
+      'firefox_get_page_state',
+      'firefox_get_accessibility_snapshot',
+      'firefox_press_key',
+      'firefox_screenshot',
+    ];
+    if (OWNERSHIP_COMMANDS.includes(name)) {
       commandParams.agentId = AGENT_ID;
     }
 

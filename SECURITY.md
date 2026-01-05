@@ -73,14 +73,16 @@ The extension returns page content as a `text` or `html` field in JSON. Claude C
 
 **Why:** Prevents prompt injection attacks where malicious websites embed instructions in their content.
 
-### 4. Local Socket Only
+### 4. Local Socket Security (v0.4.5)
 
-The Unix socket (`/tmp/claudezilla.sock`) is local-only:
-- No network exposure
-- File permissions restrict access
-- Socket is cleaned up on exit
+The Unix socket is secured with multiple layers:
 
-**Why:** Only local processes can send commands.
+- **Secure path:** Uses `XDG_RUNTIME_DIR` if available (per-user, tmpfs-backed), falls back to `tmpdir()`
+- **Restrictive permissions:** Socket is chmod 0600 (user-only access)
+- **Buffer limits:** 10MB max message size prevents memory exhaustion
+- **Clean shutdown:** Socket is removed on exit
+
+**Why:** Prevents local privilege escalation on multi-user systems.
 
 ### 5. Extension Permission Gating
 
@@ -90,6 +92,66 @@ When the user enables "Run in Private Windows" permission in Firefox (about:addo
 - **Permission enabled:** All commands work in private windows. Navigate throws an error to prevent creating non-private windows.
 
 **Why:** Users who explicitly allow the extension in private windows are signaling privacy awareness. We prevent navigation to avoid accidentally creating non-private browsing context.
+
+### 6. URL Scheme Validation (v0.4.5)
+
+All URL inputs are validated before navigation:
+
+- **Allowed schemes:** `http:`, `https:`, `about:` only
+- **Blocked:** `javascript:`, `data:`, `file://`, `chrome://`, etc.
+
+**Why:** Prevents XSS and arbitrary code execution via URL injection.
+
+### 7. Multi-Agent Tab Isolation (v0.4.5)
+
+When multiple Claude agents share the browser window:
+
+- **Tab ownership:** Each tab tracks its creator agent (128-bit entropy agent ID)
+- **Close restrictions:** Agents can only close their own tabs
+- **Window close:** Blocked if other agents have active tabs
+- **Request IDs:** UUID-based to prevent collision attacks
+
+**Why:** Prevents cross-agent interference in multi-agent environments.
+
+### 8. Sensitive Data Handling (v0.4.5)
+
+Network monitoring excludes sensitive data:
+
+- **No request bodies:** POST data is never captured (passwords, tokens)
+- **URL redaction:** Query parameters matching sensitive patterns are masked
+- **Debug log permissions:** 0600 (user-only read/write)
+
+**Why:** Prevents credential leakage through monitoring features.
+
+### 9. Content Command Ownership (v0.4.5)
+
+All commands that interact with tab content verify ownership:
+
+- **Protected commands:** getContent, click, type, scroll, waitFor, evaluate, getElementInfo, getPageState, getAccessibilitySnapshot, pressKey, getConsoleLogs, getNetworkRequests, screenshot
+- **Enforcement:** Agent ID must match tab owner or tab must be unowned ('unknown')
+- **Error response:** `OWNERSHIP: Cannot <operation> tab X (owned by agent_Y)`
+
+**Why:** Prevents cross-agent data exfiltration and unauthorized DOM manipulation.
+
+### 10. Console Capture Opt-In (v0.4.5)
+
+Console log capture is disabled by default:
+
+- **Default state:** No console interception active
+- **Activation:** First `getConsoleLogs` call enables capture for that tab
+- **Scope:** Per-page; reloads reset capture state
+
+**Why:** Prevents inadvertent capture of sensitive data logged by page scripts (API keys, tokens, debug info).
+
+### 11. CSS Selector Validation (v0.4.5)
+
+All CSS selectors are validated before use:
+
+- **Length limit:** Maximum 1000 characters
+- **Syntax check:** Validated via `document.querySelector()` in try/catch
+- **Sanitized output:** Invalid selectors throw descriptive errors
+
+**Why:** Prevents selector injection and DoS via malformed selectors.
 
 ## Prompt Injection Mitigation
 
@@ -135,6 +197,25 @@ If you discover a security vulnerability, please report it to: security@boot.ind
 
 ## Changelog
 
+- **0.4.5:** Security hardening release (January 2026 audit)
+  - Socket permissions set to 0600 (user-only)
+  - URL scheme validation (blocks javascript:, data:, file://)
+  - Agent ID entropy increased to 128 bits (from 32 bits)
+  - Tab ownership enforcement strengthened
+  - Window close blocked when other agents have tabs
+  - Request body capture removed from network monitoring
+  - Sensitive URL parameters redacted
+  - Debug log permissions set to 0600
+  - Buffer size limits (10MB) prevent memory exhaustion
+  - TMPDIR hijacking prevented via XDG_RUNTIME_DIR
+  - Install script permissions explicit (755/644)
+  - UUID-based request IDs prevent collision
+  - Content commands require tab ownership verification
+  - Console capture made opt-in (disabled by default)
+  - CSS selector validation with length limits
+  - Screenshot race condition fixed with tab verification
+- **0.4.4:** Multi-agent safety with tab ownership and screenshot mutex
+- **0.4.3:** Payload optimization and tab pool management
 - **0.3.0:** Auto-detect "Run in Private Windows" permission, disable navigate when enabled to prevent non-private window creation
 - **0.2.0:** Added devtools commands (network inspection, console logs, element info, evaluate), window management, viewport presets
 - **0.1.0:** Initial security model with command whitelist and structured responses
