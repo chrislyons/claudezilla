@@ -8,6 +8,8 @@
   <!-- Eye -->
   <circle cx="26" cy="20" r="2" fill="#FCD34D"/>
 
-  <!-- Spines -->
-  <path d="M24 14 L25 10 L26 14 M28 16 L30 12 L31 16 M22 16 L20 12 L19 16" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+  <!-- Spines (conical, filled) -->
+  <path d="M23.5 14 L25 9 L26.5 14 Z" fill="#1a1a1a"/>
+  <path d="M27.5 16 L30 11 L31.5 16 Z" fill="#1a1a1a"/>
+  <path d="M20.5 16 L19 11 L16.5 16 Z" fill="#1a1a1a"/>
 </svg>

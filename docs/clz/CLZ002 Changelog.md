@@ -45,6 +45,19 @@ See [[CLZ003 Security Audit v0.4.5]] for full details.
 - **Screenshot compression toggle** - User-configurable JPEG vs PNG format (default: compressed)
 - **Permission status indicator** - Shows private window permission state in popup
 
+### Visual Polish (2026-01-05)
+
+- **Hero logo redesign** - "Atomic Kaiju" aesthetic with tesseract frame, orbiting electrons, conical spines, cyclops eye, asymmetric bendy arms, rounded feet
+- **Watermark updates** - Conical spines with glow, z-index layering fix, cyclops eye, 20% larger (84→100px)
+- **Focusglow enhancements** - 1s fade in, 2s fade out, pixie dust particle animation
+- **Favicon** - Conical filled spines (matching hero/watermark)
+- **Tagline typography** - Orbitron font, white color
+
+### Infrastructure
+
+- **Repo transfer** - Moved to `boot-industries/claudezilla` organization
+- **README** - Updated clone URL, added Issues link
+
 ---
 
 ## v0.4.4 (2026-01-05)

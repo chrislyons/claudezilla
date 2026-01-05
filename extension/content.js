@@ -34,15 +34,20 @@ const CLAUDE_LOGO_SVG = `
       <stop offset="60%" stop-color="#E05A38" stop-opacity="0.7"/>
       <stop offset="100%" stop-color="#D14D32" stop-opacity="0"/>
     </radialGradient>
+    <!-- Spine glow gradient -->
+    <linearGradient id="wmSpineGlow" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#D14D32" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FCD34D" stop-opacity="0.4"/>
+    </linearGradient>
   </defs>
 
-  <!-- Tesseract frame (Claude terracotta) -->
+  <!-- LAYER 1: Tesseract frame -->
   <path d="M32 8 L54 18 L54 46 L32 56 L10 46 L10 18 Z"
         stroke="#D14D32" stroke-width="2.5" fill="none" stroke-linejoin="round" opacity="0.9"/>
   <path d="M32 8 L32 56 M10 18 L54 46 M54 18 L10 46"
         stroke="#D14D32" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
 
-  <!-- Electrons group (hidden by default, shown when thinking) - BEFORE character for z-order -->
+  <!-- LAYER 2: Electrons group (hidden by default, shown when thinking) -->
   <g id="claudezilla-electrons" style="opacity: 0; transition: opacity 1.5s ease-out;">
     <!-- Claudezilla's tiny waving stick arms (only visible when working) -->
     <g transform="translate(32, 32) scale(1.2)">
@@ -90,17 +95,39 @@ const CLAUDE_LOGO_SVG = `
     </circle>
   </g>
 
-  <!-- Claudezilla character (center, on top of electrons) -->
+  <!-- LAYER 3: Glow (behind character) -->
   <g transform="translate(32, 32) scale(1.2)">
-    <!-- Orange glow behind character -->
     <ellipse cx="0" cy="0" rx="8" ry="10" fill="#D14D32" opacity="0.5"/>
     <ellipse cx="0" cy="0" rx="6" ry="8" fill="#E05A38" opacity="0.4"/>
+  </g>
+
+  <!-- LAYER 4: Conical spines (bases extend into head) -->
+  <g transform="translate(32, 32) scale(1.2)">
+    <!-- Spine glows (behind) -->
+    <path d="M-0.8 -6 L0 -10 L0.8 -6" fill="url(#wmSpineGlow)" opacity="0.7">
+      <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M1.5 -4 L3.5 -8 L3.5 -3.5" fill="url(#wmSpineGlow)" opacity="0.7">
+      <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite" begin="0.3s"/>
+    </path>
+    <path d="M-1.5 -4 L-3.5 -8 L-3.5 -3.5" fill="url(#wmSpineGlow)" opacity="0.7">
+      <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite" begin="0.6s"/>
+    </path>
+    <!-- Spine dark cones (bases extend into head, body covers them) -->
+    <path d="M-0.7 -6 L0 -10 L0.7 -6 Z" fill="#1a1a1a"/>
+    <path d="M1.8 -4 L3.5 -8 L3.2 -3.5 Z" fill="#1a1a1a"/>
+    <path d="M-1.8 -4 L-3.5 -8 L-3.2 -3.5 Z" fill="#1a1a1a"/>
+  </g>
+
+  <!-- LAYER 5: Body and eye (front) -->
+  <g transform="translate(32, 32) scale(1.2)">
     <!-- Body -->
     <path d="M-4 6 L-4 0 L-5 -2 L-5 -4 L-4 -5 L-2 -5 L0 -7 L2 -5 L4 -5 L5 -4 L5 -2 L4 0 L4 6 L2 6 L2 2 L1 3 L-1 3 L-2 2 L-2 6 Z" fill="#1a1a1a"/>
-    <!-- Eye (glowing amber like favicon) -->
-    <circle cx="1" cy="-3" r="1.5" fill="#FCD34D"/>
-    <!-- Spines -->
-    <path d="M0 -7 L0.5 -10 L1 -7 M2 -5 L3.5 -8 L4 -5 M-2 -5 L-3.5 -8 L-3 -5" stroke="#1a1a1a" stroke-width="1" fill="none"/>
+    <!-- Eye socket glow -->
+    <ellipse cx="0" cy="-3" rx="2.5" ry="2" fill="#D14D32" opacity="0.4"/>
+    <!-- Eye (centered cyclops) -->
+    <circle cx="0" cy="-3" r="1.8" fill="#FCD34D"/>
+    <circle cx="0.4" cy="-3.4" r="0.6" fill="#FFF7E0" opacity="0.9"/>
   </g>
 </svg>
 `;
@@ -118,11 +145,11 @@ function initWatermark() {
     position: fixed;
     bottom: 16px;
     left: 16px;
-    width: 84px;
-    height: 84px;
+    width: 100px;
+    height: 100px;
     background: rgba(20, 18, 18, 0.94);
-    border-radius: 12px;
-    padding: 10px;
+    border-radius: 14px;
+    padding: 12px;
     z-index: 2147483647;
     opacity: 0.95;
     display: flex;
@@ -185,6 +212,20 @@ function initFocusglow() {
           inset 0 0 12px rgba(255, 215, 0, 0.4);
       }
     }
+    @keyframes claudezilla-dust {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+      25% { transform: translate(3px, -8px) scale(0.8); opacity: 1; }
+      50% { transform: translate(-2px, -12px) scale(0.6); opacity: 0.6; }
+      75% { transform: translate(4px, -16px) scale(0.4); opacity: 0.3; }
+      100% { transform: translate(0, -20px) scale(0.2); opacity: 0; }
+    }
+    @keyframes claudezilla-dust-reverse {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+      25% { transform: translate(-4px, -6px) scale(0.7); opacity: 1; }
+      50% { transform: translate(2px, -10px) scale(0.5); opacity: 0.5; }
+      75% { transform: translate(-3px, -14px) scale(0.3); opacity: 0.2; }
+      100% { transform: translate(1px, -18px) scale(0.1); opacity: 0; }
+    }
     #claudezilla-focusglow {
       position: absolute;
       pointer-events: none;
@@ -197,8 +238,45 @@ function initFocusglow() {
         0 0 30px 12px rgba(255, 165, 0, 0.6),
         0 0 50px 20px rgba(255, 215, 0, 0.35);
       animation: claudezilla-sparkle 1.5s ease-in-out infinite;
-      transition: top 0.3s ease-out, left 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+      transition: top 0.3s ease-out, left 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out;
       display: none;
+      opacity: 0;
+    }
+    #claudezilla-focusglow.visible {
+      opacity: 1;
+      transition: top 0.3s ease-out, left 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out, opacity 1s ease-in;
+    }
+    #claudezilla-focusglow.fading {
+      opacity: 0;
+      transition: top 0.3s ease-out, left 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out, opacity 2s ease-out;
+    }
+    #claudezilla-focusglow.visible::before,
+    #claudezilla-focusglow.visible::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,215,0,0.8) 50%, transparent 100%);
+      pointer-events: none;
+    }
+    #claudezilla-focusglow.visible::before {
+      top: 20%;
+      left: 10%;
+      animation: claudezilla-dust 1.8s ease-out infinite;
+      box-shadow:
+        30px 10px 0 0 rgba(255,215,0,0.7),
+        60px -5px 0 -1px rgba(255,255,255,0.6),
+        90px 15px 0 0 rgba(255,215,0,0.5);
+    }
+    #claudezilla-focusglow.visible::after {
+      top: 60%;
+      right: 15%;
+      animation: claudezilla-dust-reverse 2.2s ease-out infinite 0.5s;
+      box-shadow:
+        -25px -10px 0 0 rgba(255,215,0,0.6),
+        -55px 5px 0 -1px rgba(255,255,255,0.5),
+        -80px -8px 0 0 rgba(255,215,0,0.4);
     }
   `;
   document.head.appendChild(style);
@@ -235,11 +313,23 @@ function moveFocusTo(selector) {
   focusglowElement.style.width = `${rect.width + 8}px`;
   focusglowElement.style.height = `${rect.height + 8}px`;
 
-  // Fade out after idle
+  // Fade in (1s)
+  focusglowElement.classList.remove('fading');
+  focusglowElement.classList.add('visible');
+
+  // Fade out after idle (2s fade)
   clearTimeout(focusglowTimeout);
   focusglowTimeout = setTimeout(() => {
     if (focusglowElement) {
-      focusglowElement.style.display = 'none';
+      focusglowElement.classList.remove('visible');
+      focusglowElement.classList.add('fading');
+      // Hide after fade completes
+      setTimeout(() => {
+        if (focusglowElement && focusglowElement.classList.contains('fading')) {
+          focusglowElement.style.display = 'none';
+          focusglowElement.classList.remove('fading');
+        }
+      }, 2000);
     }
   }, 2000);
 }
