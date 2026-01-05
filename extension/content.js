@@ -42,20 +42,7 @@ const CLAUDE_LOGO_SVG = `
   <path d="M32 8 L32 56 M10 18 L54 46 M54 18 L10 46"
         stroke="#D14D32" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
 
-  <!-- Claudezilla character (center, matches favicon) -->
-  <g transform="translate(32, 32) scale(1.2)">
-    <!-- Orange glow behind character -->
-    <ellipse cx="0" cy="0" rx="8" ry="10" fill="#D14D32" opacity="0.5"/>
-    <ellipse cx="0" cy="0" rx="6" ry="8" fill="#E05A38" opacity="0.4"/>
-    <!-- Body -->
-    <path d="M-4 6 L-4 0 L-5 -2 L-5 -4 L-4 -5 L-2 -5 L0 -7 L2 -5 L4 -5 L5 -4 L5 -2 L4 0 L4 6 L2 6 L2 2 L1 3 L-1 3 L-2 2 L-2 6 Z" fill="#1a1a1a"/>
-    <!-- Eye (glowing amber like favicon) -->
-    <circle cx="1" cy="-3" r="1.5" fill="#FCD34D"/>
-    <!-- Spines -->
-    <path d="M0 -7 L0.5 -10 L1 -7 M2 -5 L3.5 -8 L4 -5 M-2 -5 L-3.5 -8 L-3 -5" stroke="#1a1a1a" stroke-width="1" fill="none"/>
-  </g>
-
-  <!-- Electrons group (hidden by default, shown when thinking) -->
+  <!-- Electrons group (hidden by default, shown when thinking) - BEFORE character for z-order -->
   <g id="claudezilla-electrons" style="opacity: 0; transition: opacity 1.5s ease-out;">
     <!-- Claudezilla's tiny waving stick arms (only visible when working) -->
     <g transform="translate(32, 32) scale(1.2)">
@@ -101,6 +88,19 @@ const CLAUDE_LOGO_SVG = `
     <circle r="2.5" fill="url(#electronGlow)">
       <animateMotion dur="3s" repeatCount="indefinite" begin="-1.5s" path="M54 18 L10 46 L54 18"/>
     </circle>
+  </g>
+
+  <!-- Claudezilla character (center, on top of electrons) -->
+  <g transform="translate(32, 32) scale(1.2)">
+    <!-- Orange glow behind character -->
+    <ellipse cx="0" cy="0" rx="8" ry="10" fill="#D14D32" opacity="0.5"/>
+    <ellipse cx="0" cy="0" rx="6" ry="8" fill="#E05A38" opacity="0.4"/>
+    <!-- Body -->
+    <path d="M-4 6 L-4 0 L-5 -2 L-5 -4 L-4 -5 L-2 -5 L0 -7 L2 -5 L4 -5 L5 -4 L5 -2 L4 0 L4 6 L2 6 L2 2 L1 3 L-1 3 L-2 2 L-2 6 Z" fill="#1a1a1a"/>
+    <!-- Eye (glowing amber like favicon) -->
+    <circle cx="1" cy="-3" r="1.5" fill="#FCD34D"/>
+    <!-- Spines -->
+    <path d="M0 -7 L0.5 -10 L1 -7 M2 -5 L3.5 -8 L4 -5 M-2 -5 L-3.5 -8 L-3 -5" stroke="#1a1a1a" stroke-width="1" fill="none"/>
   </g>
 </svg>
 `;

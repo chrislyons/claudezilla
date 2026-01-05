@@ -15,7 +15,7 @@ Give Claude the ability to browse the web, fill out forms, take screenshots, and
 ### 1. Install
 
 ```bash
-git clone https://github.com/chrislyons/claudezilla.git
+git clone https://github.com/boot-industries/claudezilla.git
 cd claudezilla
 
 # macOS
@@ -119,7 +119,7 @@ The extension uses Firefox's [Native Messaging](https://developer.mozilla.org/en
 
 ## Contributing
 
-Issues and PRs welcome. See [CLAUDE.md](./CLAUDE.md) for development notes.
+[Issues](https://github.com/boot-industries/claudezilla/issues) and PRs welcome. See [CLAUDE.md](./CLAUDE.md) for development notes.
 
 ## License
 
