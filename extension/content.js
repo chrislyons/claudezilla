@@ -17,6 +17,7 @@ let settings = {
 // Visual elements
 let watermarkElement = null;
 let focusglowElement = null;
+let speechBubbleElement = null;
 let focusglowTimeout = null;
 let electronTimeout = null;
 
@@ -174,6 +175,57 @@ function initWatermark() {
             inset 0 0 0 1px rgba(209, 77, 50, 0.4);
         }
       }
+      /* Speech bubble - tiny, classic white comic style */
+      @keyframes claudezilla-bubble-pop {
+        0% { transform: scale(0); opacity: 0; }
+        70% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes claudezilla-note-bob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-1px); }
+      }
+      #claudezilla-speech-bubble {
+        position: fixed !important;
+        bottom: 84px !important;
+        left: 90px !important;
+        width: 8px;
+        height: 8px;
+        background: #f5f5f4;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2147483647 !important;
+        opacity: 0;
+        transform: scale(0);
+        pointer-events: none;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      }
+      #claudezilla-speech-bubble.singing {
+        opacity: 1;
+        transform: scale(1);
+        animation: claudezilla-bubble-pop 0.25s ease-out forwards;
+      }
+      #claudezilla-speech-bubble .note {
+        font-size: 6px;
+        color: #1a1a1a;
+        font-family: monospace;
+        line-height: 1;
+        animation: claudezilla-note-bob 0.5s ease-in-out infinite;
+      }
+      /* Tiny bubble tail pointing diagonally to monster's mouth */
+      #claudezilla-speech-bubble::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: -1px;
+        width: 0;
+        height: 0;
+        border: 3px solid transparent;
+        border-top-color: #f5f5f4;
+        transform: rotate(-45deg);
+      }
     `;
     document.head.appendChild(style);
   }
@@ -215,6 +267,12 @@ function initWatermark() {
   });
 
   document.body.appendChild(watermarkElement);
+
+  // Create speech bubble (singing note - appears when working)
+  speechBubbleElement = document.createElement('div');
+  speechBubbleElement.id = 'claudezilla-speech-bubble';
+  speechBubbleElement.innerHTML = '<span class="note">♪</span>';
+  document.body.appendChild(speechBubbleElement);
 }
 
 /**
@@ -379,15 +437,17 @@ function triggerElectrons() {
   const arms = watermarkElement.querySelector('#claudezilla-arms');
   if (!electrons) return;
 
-  // Show electrons and arms
+  // Show electrons, arms, and speech bubble (Claudezilla sings while working!)
   electrons.style.opacity = '1';
   if (arms) arms.style.opacity = '1';
+  if (speechBubbleElement) speechBubbleElement.classList.add('singing');
 
   // Hide after 5s idle (with gradual 1.5s fade)
   clearTimeout(electronTimeout);
   electronTimeout = setTimeout(() => {
     electrons.style.opacity = '0';
     if (arms) arms.style.opacity = '0';
+    if (speechBubbleElement) speechBubbleElement.classList.remove('singing');
   }, 5000);
 }
 
