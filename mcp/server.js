@@ -16,8 +16,13 @@ import {
 import { connect } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { randomBytes } from 'crypto';
 
 const SOCKET_PATH = join(tmpdir(), 'claudezilla.sock');
+
+// Unique agent ID for this MCP server instance
+// Used for tab ownership tracking - only the agent that created a tab can close it
+const AGENT_ID = `agent_${randomBytes(4).toString('hex')}_${process.pid}`;
 
 /**
  * Send command to Claudezilla via Unix socket
@@ -105,7 +110,7 @@ const TOOLS = [
   // ===== CORE BROWSER CONTROL =====
   {
     name: 'firefox_create_window',
-    description: 'Open a URL in the shared Claudezilla browser. SHARED POOL: One private window with MAX 10 TABS shared across all Claude agents. Each call creates a new tab. When limit reached, oldest tab auto-closed. Returns: windowId, tabId, tabCount, maxTabs. Use firefox_close_tab to free slots when done with a tab.',
+    description: 'Open a URL in the shared Claudezilla browser. SHARED POOL: One private window with MAX 10 TABS shared across all Claude agents. Each call creates a new tab. When limit reached, oldest tab auto-closed. OWNERSHIP: Each tab tracks its creator - only you can close tabs you created. Returns: windowId, tabId, ownerId, tabCount, maxTabs.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -239,7 +244,7 @@ const TOOLS = [
   },
   {
     name: 'firefox_screenshot',
-    description: 'Capture a screenshot of a tab. If tabId specified, switches to that tab first (only screenshot requires visible tab - other commands work on background tabs). Returns base64-encoded image. Default: JPEG at 60% quality, 50% scale.',
+    description: 'Capture a screenshot. SERIALIZED: Requests are queued to prevent collisions when multiple agents screenshot simultaneously. If tabId specified, switches to that tab first (only screenshot requires visible tab). Prefer firefox_get_page_state for faster, collision-free page analysis. Default: JPEG 60% quality, 50% scale.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -265,7 +270,7 @@ const TOOLS = [
   },
   {
     name: 'firefox_get_tabs',
-    description: 'List all Claudezilla tabs with their URLs, titles, and tabIds. Use this to see which tabs are open in the shared 10-tab pool.',
+    description: 'List all Claudezilla tabs with URLs, titles, tabIds, and ownerId. Shows which agent owns each tab. Use to see shared 10-tab pool status.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -273,13 +278,13 @@ const TOOLS = [
   },
   {
     name: 'firefox_close_tab',
-    description: 'Close a specific tab by ID. Use this to free up slots in the shared 10-tab pool. Get tabIds from firefox_get_tabs or firefox_create_window response.',
+    description: 'Close a specific tab by ID. OWNERSHIP ENFORCED: You can only close tabs you created. Other agents cannot close your tabs. Use firefox_get_tabs to see ownership.',
     inputSchema: {
       type: 'object',
       properties: {
         tabId: {
           type: 'number',
-          description: 'Tab ID to close (required)',
+          description: 'Tab ID to close (required). Must be a tab you own.',
         },
       },
       required: ['tabId'],
@@ -587,7 +592,7 @@ const TOOL_TO_COMMAND = {
 const server = new Server(
   {
     name: 'claudezilla',
-    version: '0.4.3',
+    version: '0.4.4',
   },
   {
     capabilities: {
@@ -623,7 +628,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   try {
-    const response = await sendCommand(command, args || {});
+    // Inject agent ID for tab ownership tracking
+    const commandParams = { ...(args || {}) };
+    if (name === 'firefox_create_window' || name === 'firefox_close_tab') {
+      commandParams.agentId = AGENT_ID;
+    }
+
+    const response = await sendCommand(command, commandParams);
 
     if (response.success) {
       // Special handling for screenshots - return as image

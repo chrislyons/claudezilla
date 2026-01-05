@@ -1,6 +1,6 @@
 # Claudezilla - Claude Code Firefox Extension
 
-**Version:** 0.4.3
+**Version:** 0.4.4
 
 ## Overview
 
@@ -8,6 +8,8 @@ Firefox extension providing browser automation for Claude Code CLI. A Google-fre
 
 **Key Features (v0.4.x):**
 - Single window with max 10 tabs shared across Claude agents
+- Multi-agent safety (tab ownership, screenshot mutex)
+- Image compression (JPEG 60%, 50% scale by default)
 - Payload optimization (text truncation, node limits)
 - Visual effects (focus glow, watermark with animated electrons)
 - Fast page analysis (structured JSON, accessibility tree)
@@ -119,3 +121,21 @@ claudezilla@boot.industries
 | getContent | No HTML | `includeHtml` |
 | getAccessibilitySnapshot | 200 nodes | `maxNodes` |
 | getPageState | 50 links, 30 buttons | `maxLinks`, `maxButtons`, etc. |
+
+## Multi-Agent Safety (v0.4.4)
+
+**Tab Ownership:**
+- Each tab tracks its creator (agentId from MCP server)
+- Only the creator can close their own tab via `closeTab`
+- Other agents get: `OWNERSHIP: Tab X was created by agent_Y. You cannot close another agent's tab.`
+- Use `getTabs` to see ownership info for all tabs
+
+**Screenshot Mutex:**
+- All screenshot requests are serialized via promise chain
+- Prevents tab-switching collisions when multiple agents screenshot simultaneously
+- Each request waits for previous to complete before switching tabs
+
+**Agent IDs:**
+- Generated at MCP server startup: `agent_<random>_<pid>`
+- Passed automatically with `createWindow` and `closeTab` commands
+- Visible in `getTabs` response as `ownerId` field

@@ -8,7 +8,7 @@ Firefox browser automation for [Claude Code](https://claude.com/claude-code). A 
 - **Tab Pool** — Single window with max 10 tabs, shared across Claude agents
 - **DOM Reading** — Get page content with smart truncation
 - **Click/Type** — Interact with elements by CSS selector
-- **Screenshot** — Compressed JPEG at configurable quality/scale
+- **Screenshot** — JPEG at 60% quality, 50% scale (configurable)
 - **Keyboard** — Press keys, use shortcuts (Ctrl+A, Enter, etc.)
 
 ### DevTools Access
@@ -32,6 +32,11 @@ Firefox browser automation for [Claude Code](https://claude.com/claude-code). A 
 - **Content** — HTML excluded by default, text capped at 50K chars
 - **Accessibility** — Tree capped at 200 nodes to prevent overflow
 - **Page State** — Configurable limits per category (links, buttons, etc.)
+
+### Multi-Agent Safety (v0.4.4)
+- **Tab Ownership** — Each tab tracks its creator agent; only the creator can close it
+- **Screenshot Mutex** — Screenshot requests are serialized to prevent tab-switching collisions
+- **Agent IDs** — Each MCP server instance gets a unique ID for ownership tracking
 
 ## Requirements
 
@@ -96,14 +101,14 @@ cd mcp && npm install
 **Available MCP Tools:**
 
 *Browser Control:*
-- `firefox_create_window` — Open URL in shared 10-tab pool
+- `firefox_create_window` — Open URL in shared 10-tab pool (returns ownerId)
 - `firefox_get_content` — Read page text (HTML opt-in, 50K char limit)
 - `firefox_click` — Click element by selector
 - `firefox_type` — Type into input field
 - `firefox_press_key` — Send keyboard events (Enter, Tab, shortcuts)
-- `firefox_screenshot` — Capture screenshot (JPEG, configurable quality)
-- `firefox_get_tabs` — List tabs in pool
-- `firefox_close_tab` — Close specific tab (free pool slot)
+- `firefox_screenshot` — Capture screenshot (serialized to prevent collisions)
+- `firefox_get_tabs` — List tabs with ownership info
+- `firefox_close_tab` — Close your own tab (ownership enforced)
 - `firefox_close_window` — Close entire window (affects all agents)
 
 *Page Analysis:*

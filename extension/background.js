@@ -24,8 +24,12 @@ const pendingRequests = new Map();
 
 // Session tracking - single window, max 10 tabs
 const MAX_TABS = 10;
-let claudezillaWindow = null; // { windowId, tabs: [tabId, ...], createdAt, groupId }
+let claudezillaWindow = null; // { windowId, tabs: [{tabId, ownerId}, ...], createdAt, groupId }
 let activeTabId = null; // Currently active tab in the Claudezilla window
+
+// Screenshot mutex - serialize all screenshot requests to prevent collisions
+// (captureVisibleTab only works on visible tab, so we must switch tabs sequentially)
+let screenshotLock = Promise.resolve();
 
 // Tab group colors (Firefox 138+)
 const SESSION_COLORS = ['blue', 'red', 'yellow', 'green', 'pink', 'cyan', 'orange', 'grey'];
@@ -261,8 +265,10 @@ async function getSession(windowId) {
     }
 
     // Get active tab
-    if (!activeTabId || !claudezillaWindow.tabs.includes(activeTabId)) {
-      activeTabId = claudezillaWindow.tabs[claudezillaWindow.tabs.length - 1];
+    const tabIds = claudezillaWindow.tabs.map(t => t.tabId);
+    if (!activeTabId || !tabIds.includes(activeTabId)) {
+      const lastTab = claudezillaWindow.tabs[claudezillaWindow.tabs.length - 1];
+      activeTabId = lastTab?.tabId;
     }
 
     const tab = await browser.tabs.get(activeTabId);
@@ -305,7 +311,7 @@ async function handleCliCommand(message) {
 
       case 'version':
         result = {
-          extension: '0.4.3',
+          extension: '0.4.4',
           browser: navigator.userAgent,
           features: ['devtools', 'network', 'console', 'evaluate', 'focusglow', 'tabgroups'],
         };
@@ -342,23 +348,42 @@ async function handleCliCommand(message) {
       }
 
       case 'getTabs': {
-        const tabs = await browser.tabs.query({});
-        result = tabs.map(t => ({ tabId: t.id, url: t.url, title: t.title, active: t.active }));
-        break;
-      }
-
-      case 'closeTab': {
-        const { tabId } = params;
-        if (!tabId) throw new Error('tabId is required');
-        await browser.tabs.remove(tabId);
-        result = { closed: true, tabId };
+        // Return Claudezilla tabs with ownership info
+        if (!claudezillaWindow) {
+          result = { tabs: [], message: 'No Claudezilla window active' };
+          break;
+        }
+        const tabsInfo = await Promise.all(
+          claudezillaWindow.tabs.map(async (entry) => {
+            try {
+              const tab = await browser.tabs.get(entry.tabId);
+              return {
+                tabId: entry.tabId,
+                url: tab.url,
+                title: tab.title,
+                active: tab.active,
+                ownerId: entry.ownerId
+              };
+            } catch (e) {
+              return { tabId: entry.tabId, ownerId: entry.ownerId, error: 'Tab not found' };
+            }
+          })
+        );
+        result = {
+          windowId: claudezillaWindow.windowId,
+          tabs: tabsInfo,
+          tabCount: claudezillaWindow.tabs.length,
+          maxTabs: MAX_TABS
+        };
         break;
       }
 
       case 'createWindow': {
         // Single window mode: reuse existing window or create new one
         // Max 10 tabs - oldest tab closed when limit reached
-        const { url } = params;
+        // Tab ownership: each tab tracks its creator agent for close permission
+        const { url, agentId } = params;
+        const ownerId = agentId || 'unknown';
         let tabId;
         let isNewWindow = false;
         let closedTabId = null;
@@ -377,7 +402,8 @@ async function handleCliCommand(message) {
           // Reuse existing window - create new tab
           // If at max tabs, close oldest first
           if (claudezillaWindow.tabs.length >= MAX_TABS) {
-            closedTabId = claudezillaWindow.tabs.shift(); // Remove oldest
+            const oldest = claudezillaWindow.tabs.shift(); // Remove oldest
+            closedTabId = oldest.tabId;
             try {
               await browser.tabs.remove(closedTabId);
               console.log(`[claudezilla] Closed oldest tab ${closedTabId} (max ${MAX_TABS} tabs)`);
@@ -393,7 +419,7 @@ async function handleCliCommand(message) {
             active: true
           });
           tabId = newTab.id;
-          claudezillaWindow.tabs.push(tabId);
+          claudezillaWindow.tabs.push({ tabId, ownerId });
           activeTabId = tabId;
 
         } else {
@@ -425,10 +451,10 @@ async function handleCliCommand(message) {
             console.log('[claudezilla] Tab groups not available:', e.message);
           }
 
-          // Initialize window tracking
+          // Initialize window tracking with ownership
           claudezillaWindow = {
             windowId: win.id,
-            tabs: [tabId],
+            tabs: [{ tabId, ownerId }],
             createdAt: Date.now(),
             groupId
           };
@@ -448,6 +474,7 @@ async function handleCliCommand(message) {
         result = {
           windowId: claudezillaWindow.windowId,
           tabId,
+          ownerId,
           tabCount: claudezillaWindow.tabs.length,
           maxTabs: MAX_TABS,
           isNewWindow,
@@ -459,7 +486,8 @@ async function handleCliCommand(message) {
 
       case 'closeTab': {
         // Close a specific tab - use this to free up slots in the shared 10-tab pool
-        const { tabId: closeTabId } = params;
+        // OWNERSHIP: Only the agent that created the tab can close it
+        const { tabId: closeTabId, agentId } = params;
 
         if (!closeTabId) {
           throw new Error('tabId is required');
@@ -469,18 +497,26 @@ async function handleCliCommand(message) {
           throw new Error('No Claudezilla window active');
         }
 
-        const tabIndex = claudezillaWindow.tabs.indexOf(closeTabId);
-        if (tabIndex === -1) {
-          throw new Error(`Tab ${closeTabId} not found in Claudezilla window. Available tabs: ${claudezillaWindow.tabs.join(', ')}`);
+        const tabEntry = claudezillaWindow.tabs.find(t => t.tabId === closeTabId);
+        if (!tabEntry) {
+          const availableTabs = claudezillaWindow.tabs.map(t => t.tabId).join(', ');
+          throw new Error(`Tab ${closeTabId} not found in Claudezilla window. Available tabs: ${availableTabs}`);
+        }
+
+        // OWNERSHIP CHECK: Only the creator can close the tab
+        if (tabEntry.ownerId !== 'unknown' && agentId && tabEntry.ownerId !== agentId) {
+          throw new Error(`OWNERSHIP: Tab ${closeTabId} was created by ${tabEntry.ownerId}. You (${agentId}) cannot close another agent's tab.`);
         }
 
         // Remove from tracking
+        const tabIndex = claudezillaWindow.tabs.indexOf(tabEntry);
         claudezillaWindow.tabs.splice(tabIndex, 1);
         await browser.tabs.remove(closeTabId);
 
         // Update active tab if we closed it
         if (activeTabId === closeTabId) {
-          activeTabId = claudezillaWindow.tabs[claudezillaWindow.tabs.length - 1] || null;
+          const lastTab = claudezillaWindow.tabs[claudezillaWindow.tabs.length - 1];
+          activeTabId = lastTab?.tabId || null;
         }
 
         result = {
@@ -624,51 +660,60 @@ async function handleCliCommand(message) {
       }
 
       case 'screenshot': {
-        const { windowId, tabId: requestedTabId, quality = 60, scale = 0.5, format = 'jpeg' } = params;
-        const session = await getSession(windowId);
+        // MUTEX: Serialize all screenshot requests to prevent tab-switching collisions
+        // (captureVisibleTab only works on visible tab)
+        const screenshotPromise = screenshotLock.then(async () => {
+          const { windowId, tabId: requestedTabId, quality = 60, scale = 0.5, format = 'jpeg' } = params;
+          const session = await getSession(windowId);
 
-        // Determine which tab to capture
-        let targetTabId = requestedTabId || activeTabId;
-        if (requestedTabId && claudezillaWindow && !claudezillaWindow.tabs.includes(requestedTabId)) {
-          throw new Error(`Tab ${requestedTabId} not found in Claudezilla window. Available tabs: ${claudezillaWindow.tabs.join(', ')}`);
-        }
+          // Determine which tab to capture
+          const tabIds = claudezillaWindow?.tabs.map(t => t.tabId) || [];
+          let targetTabId = requestedTabId || activeTabId;
+          if (requestedTabId && claudezillaWindow && !tabIds.includes(requestedTabId)) {
+            throw new Error(`Tab ${requestedTabId} not found in Claudezilla window. Available tabs: ${tabIds.join(', ')}`);
+          }
 
-        // If specific tab requested and it's not visible, switch to it first
-        if (targetTabId && targetTabId !== activeTabId) {
-          await browser.tabs.update(targetTabId, { active: true });
-          activeTabId = targetTabId;
-          // Brief delay for tab to render
-          await new Promise(r => setTimeout(r, 100));
-        }
+          // If specific tab requested and it's not visible, switch to it first
+          if (targetTabId && targetTabId !== activeTabId) {
+            await browser.tabs.update(targetTabId, { active: true });
+            activeTabId = targetTabId;
+            // Brief delay for tab to render
+            await new Promise(r => setTimeout(r, 100));
+          }
 
-        // Capture with JPEG compression (much smaller than PNG)
-        const captureFormat = format === 'png' ? 'png' : 'jpeg';
-        const captureOpts = { format: captureFormat };
-        if (captureFormat === 'jpeg') {
-          captureOpts.quality = Math.min(100, Math.max(1, quality));
-        }
-        const rawDataUrl = await browser.tabs.captureVisibleTab(session.windowId, captureOpts);
+          // Capture with JPEG compression (much smaller than PNG)
+          const captureFormat = format === 'png' ? 'png' : 'jpeg';
+          const captureOpts = { format: captureFormat };
+          if (captureFormat === 'jpeg') {
+            captureOpts.quality = Math.min(100, Math.max(1, quality));
+          }
+          const rawDataUrl = await browser.tabs.captureVisibleTab(session.windowId, captureOpts);
 
-        // If scale < 1, resize via content script
-        if (scale < 1) {
-          const response = await executeInTab(targetTabId, 'resizeImage', {
-            dataUrl: rawDataUrl,
-            scale,
-            quality,
-            format: captureFormat,
-          });
-          result = {
-            tabId: targetTabId,
-            dataUrl: response.result.dataUrl,
-            originalSize: response.result.originalSize,
-            scaledSize: response.result.scaledSize,
-            format: captureFormat,
-            quality,
-            scale,
-          };
-        } else {
-          result = { tabId: targetTabId, dataUrl: rawDataUrl, format: captureFormat, quality, scale: 1 };
-        }
+          // If scale < 1, resize via content script
+          if (scale < 1) {
+            const response = await executeInTab(targetTabId, 'resizeImage', {
+              dataUrl: rawDataUrl,
+              scale,
+              quality,
+              format: captureFormat,
+            });
+            return {
+              tabId: targetTabId,
+              dataUrl: response.result.dataUrl,
+              originalSize: response.result.originalSize,
+              scaledSize: response.result.scaledSize,
+              format: captureFormat,
+              quality,
+              scale,
+            };
+          } else {
+            return { tabId: targetTabId, dataUrl: rawDataUrl, format: captureFormat, quality, scale: 1 };
+          }
+        });
+
+        // Chain this request to the lock (error handling keeps chain alive)
+        screenshotLock = screenshotPromise.catch(() => {});
+        result = await screenshotPromise;
         break;
       }
 
@@ -854,14 +899,15 @@ browser.windows.onRemoved.addListener((windowId) => {
 
 // Track when tabs are closed (keep tabs array in sync)
 browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  if (claudezillaWindow && claudezillaWindow.tabs.includes(tabId)) {
-    const index = claudezillaWindow.tabs.indexOf(tabId);
-    if (index > -1) {
-      claudezillaWindow.tabs.splice(index, 1);
+  if (claudezillaWindow) {
+    const tabIndex = claudezillaWindow.tabs.findIndex(t => t.tabId === tabId);
+    if (tabIndex > -1) {
+      claudezillaWindow.tabs.splice(tabIndex, 1);
       console.log(`[claudezilla] Tab ${tabId} closed. ${claudezillaWindow.tabs.length}/${MAX_TABS} tabs remaining.`);
     }
     if (activeTabId === tabId) {
-      activeTabId = claudezillaWindow.tabs[claudezillaWindow.tabs.length - 1] || null;
+      const lastTab = claudezillaWindow.tabs[claudezillaWindow.tabs.length - 1];
+      activeTabId = lastTab?.tabId || null;
     }
   }
 });
@@ -872,7 +918,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete') return;
 
   // Check if this tab belongs to Claudezilla
-  if (claudezillaWindow && claudezillaWindow.tabs.includes(tabId)) {
+  if (claudezillaWindow && claudezillaWindow.tabs.some(t => t.tabId === tabId)) {
     // Re-enable visuals on this tab (content script was re-injected)
     setTimeout(() => {
       browser.tabs.sendMessage(tabId, { action: 'enableClaudezillaVisuals' }).catch(() => {});
@@ -883,7 +929,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // Track active tab changes within Claudezilla window
 browser.tabs.onActivated.addListener((activeInfo) => {
   if (claudezillaWindow && activeInfo.windowId === claudezillaWindow.windowId) {
-    if (claudezillaWindow.tabs.includes(activeInfo.tabId)) {
+    if (claudezillaWindow.tabs.some(t => t.tabId === activeInfo.tabId)) {
       activeTabId = activeInfo.tabId;
     }
   }
