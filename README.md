@@ -8,7 +8,6 @@ Give Claude the ability to browse the web, fill out forms, take screenshots, and
 
 - **No Google account required** — Works with Firefox, no Chrome sign-in needed
 - **Privacy-conscious** — Use private browsing, control what Claude can access
-- **Full DevTools access** — Console logs, network requests, JavaScript evaluation
 - **Multi-agent safe** — Multiple Claude sessions can share the browser without conflicts
 
 ## Quick Start
@@ -61,7 +60,6 @@ cd claudezilla/mcp && npm install
 | **Read** | Extract text, get page structure, accessibility tree |
 | **Interact** | Click buttons, fill forms, press keys, scroll |
 | **Screenshot** | Capture pages (JPEG, configurable quality) |
-| **Debug** | View console logs, network requests, run JavaScript |
 | **Wait** | Handle SPAs and dynamic content |
 
 ## Example Usage
@@ -72,7 +70,6 @@ Once connected, Claude can use commands like:
 Claude, open https://example.com and take a screenshot
 Claude, fill in the search box with "Firefox automation" and click submit
 Claude, get all the links on this page
-Claude, show me the console errors
 ```
 
 ## Available Tools
@@ -90,11 +87,6 @@ Claude, show me the console errors
 - `firefox_get_page_state` — Structured data (headings, links, buttons)
 - `firefox_get_accessibility_snapshot` — Semantic tree (screen reader view)
 - `firefox_get_element` — Element attributes and styles
-
-### DevTools
-- `firefox_get_console` — Console output by level
-- `firefox_get_network` — XHR/fetch requests with timing
-- `firefox_evaluate` — Run JavaScript in page context
 - `firefox_wait_for` — Wait for element to appear
 - `firefox_scroll` — Scroll to element or position
 
@@ -112,7 +104,6 @@ Claudezilla is designed with security in mind:
 - **Local only** — Communication via Unix socket (no network exposure)
 - **Tab isolation** — Each Claude session owns its tabs
 - **URL validation** — Blocks dangerous schemes (`javascript:`, `data:`)
-- **Opt-in capture** — Console/network monitoring only when requested
 
 Works in both regular and private Firefox windows. When private window permission is enabled, navigation commands are restricted to preserve privacy intent.
 
