@@ -192,9 +192,9 @@ function initWatermark() {
         50% { transform: translateY(-1px); }
       }
       #claudezilla-speech-bubble {
-        position: fixed !important;
-        bottom: 84px !important;
-        left: 90px !important;
+        position: absolute !important;
+        top: 24px !important;
+        right: 18px !important;
         width: 8px;
         height: 8px;
         background: #f5f5f4;
@@ -202,7 +202,7 @@ function initWatermark() {
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 2147483647 !important;
+        z-index: 10;
         opacity: 0;
         transform: scale(0);
         pointer-events: none;
@@ -276,10 +276,11 @@ function initWatermark() {
   document.body.appendChild(watermarkElement);
 
   // Create speech bubble (singing note - appears when working)
+  // Append inside watermark for relative positioning
   speechBubbleElement = document.createElement('div');
   speechBubbleElement.id = 'claudezilla-speech-bubble';
   speechBubbleElement.innerHTML = '<span class="note">♪</span>';
-  document.body.appendChild(speechBubbleElement);
+  watermarkElement.appendChild(speechBubbleElement);
 }
 
 /**
