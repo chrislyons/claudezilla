@@ -20,19 +20,6 @@ async function checkPermissionStatus() {
   }
 }
 
-// Open extension settings
-document.getElementById('openSettings').addEventListener('click', () => {
-  // Open about:addons page
-  browser.tabs.create({ url: 'about:addons' });
-});
-
-// Close tab
-document.getElementById('closeTab').addEventListener('click', () => {
-  // Mark as seen so we don't show again
-  browser.storage.local.set({ welcomePageSeen: true });
-  window.close();
-});
-
 // Check permission status
 checkPermissionStatus();
 

@@ -455,87 +455,6 @@
       filter: drop-shadow(0 0 10px var(--terracotta));
     }
 
-    /* CTA Buttons */
-    .cta-buttons {
-      display: flex;
-      gap: 16px;
-      margin-top: 64px;
-      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s backwards;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    button {
-      flex: 1;
-      padding: 20px 32px;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    button::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-
-    button:hover::before {
-      width: 300px;
-      height: 300px;
-    }
-
-    .btn-primary {
-      background: var(--terracotta);
-      color: var(--text-primary);
-      box-shadow: 0 0 30px var(--terracotta-glow);
-    }
-
-    .btn-primary:hover {
-      background: var(--terracotta-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 0 50px var(--terracotta-glow);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text-secondary);
-      border: 2px solid #333;
-    }
-
-    .btn-secondary:hover {
-      background: #1a1a1a;
-      border-color: #555;
-      color: var(--text-primary);
-    }
-
     /* Note */
     .note {
       background: rgba(209, 77, 50, 0.1);
@@ -752,16 +671,6 @@
           will be restricted. You can enable this anytime from <code>about:addons</code>.
         </p>
       </div>
-    </div>
-
-    <!-- CTA Buttons -->
-    <div class="cta-buttons">
-      <button class="btn-primary" id="openSettings">
-        <span style="position: relative; z-index: 1;">Open Extension Settings</span>
-      </button>
-      <button class="btn-secondary" id="closeTab">
-        <span style="position: relative; z-index: 1;">I'll Do This Later</span>
-      </button>
     </div>
   </div>
 
