@@ -18,9 +18,15 @@ function setStatus(connected, text) {
 }
 
 function setInfo(info) {
-  infoDiv.innerHTML = Object.entries(info)
-    .map(([key, value]) => `<div><strong>${key}:</strong> ${value}</div>`)
-    .join('');
+  infoDiv.innerHTML = '';
+  Object.entries(info).forEach(([key, value]) => {
+    const div = document.createElement('div');
+    const strong = document.createElement('strong');
+    strong.textContent = key + ':';
+    div.appendChild(strong);
+    div.appendChild(document.createTextNode(' ' + value));
+    infoDiv.appendChild(div);
+  });
 }
 
 function showError(message) {

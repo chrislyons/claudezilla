@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/node
+#!/usr/bin/env node
 
 /**
  * Claudezilla CLI
@@ -121,7 +121,7 @@ Window Commands:
   resizeWindow [--width 375] [--height 667]    Resize for mobile testing
 
 Tab Commands:
-  navigate --url <url>          Navigate to URL in current tab
+  navigate --url <url>          Navigate to URL in current tab (disabled if "Run in Private Windows" permission enabled)
   getActiveTab                  Get active tab info
   getTabs                       List all tabs
   closeTab --tabId <id>         Close a tab

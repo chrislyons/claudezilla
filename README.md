@@ -138,6 +138,39 @@ browser.runtime.sendMessage({ action: 'getActiveTab' }).then(console.log);
 browser.runtime.sendMessage({ action: 'navigate', params: { url: 'https://example.com' } });
 ```
 
+## ⚠️ JavaScript Evaluation Warning
+
+The `evaluate` command allows running arbitrary JavaScript in the page context. This is powerful for data extraction but has security implications:
+
+- **Only use on trusted pages** — Malicious websites can modify JavaScript behavior
+- **Don't evaluate untrusted code** — Never pass user input or page content directly to `evaluate`
+- **Be aware of side effects** — JavaScript can modify page state, cookies, or send requests
+- **Privileged context** — Runs with the same permissions as the page itself
+
+**Safe usage pattern:**
+```javascript
+// SAFE: Run specific logic with hardcoded selectors
+./host/cli.js evaluate --expression "document.querySelectorAll('article').length"
+
+// DANGEROUS: Never do this
+./host/cli.js evaluate --expression pageContent  // ❌ untrusted input
+```
+
+See [SECURITY.md](./SECURITY.md) for more details.
+
+## Extension Permissions
+
+Claudezilla's behavior changes based on the "Run in Private Windows" permission in Firefox:
+
+- **Permission disabled (default)** — All commands work only in private windows. `firefox_navigate` is enabled.
+- **Permission enabled** — All commands still work in private windows. `firefox_navigate` is disabled to prevent agents from creating non-private windows.
+
+To enable the permission:
+1. Open Firefox and navigate to about:addons
+2. Click on **Claudezilla**
+3. Go to **Details** tab
+4. Find **"Run in Private Windows"** and click **Allow**
+
 ## Security
 
 - **Private windows only** — Claude can only operate in private browser windows

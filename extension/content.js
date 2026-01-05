@@ -377,9 +377,6 @@ function type(params) {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { action, params } = message;
 
-  // Use original console to avoid self-capture
-  originalConsole.log('[claudezilla-content] Received:', action, params);
-
   // Handle async actions
   (async () => {
     try {
@@ -424,12 +421,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       sendResponse({ success: true, result });
     } catch (error) {
-      originalConsole.error('[claudezilla-content] Error:', error);
       sendResponse({ success: false, error: error.message });
     }
   })();
 
   return true; // Keep message channel open for async response
 });
-
-originalConsole.log('[claudezilla-content] Content script loaded on', window.location.href);

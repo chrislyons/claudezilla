@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/node
+#!/usr/bin/env node
 
 /**
  * Claudezilla Native Messaging Host
@@ -15,15 +15,18 @@
 import { readMessage, sendMessage } from './protocol.js';
 import { appendFileSync, unlinkSync, existsSync } from 'fs';
 import { createServer } from 'net';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
-const DEBUG_LOG = '/tmp/claudezilla-debug.log';
-const SOCKET_PATH = '/tmp/claudezilla.sock';
+const DEBUG_LOG = join(tmpdir(), 'claudezilla-debug.log');
+const SOCKET_PATH = join(tmpdir(), 'claudezilla.sock');
 
 // SECURITY: Whitelist of allowed commands
 const ALLOWED_COMMANDS = new Set([
   // Core browser control
   'ping',
   'version',
+  'canNavigate',
   'navigate',
   'getActiveTab',
   'getContent',

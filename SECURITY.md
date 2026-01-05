@@ -18,8 +18,10 @@ Only specific, well-defined commands are allowed. The native host rejects any co
 
 ```javascript
 const ALLOWED_COMMANDS = new Set([
+  // Core browser control
   'ping',
   'version',
+  'canNavigate',
   'navigate',
   'getActiveTab',
   'getContent',
@@ -28,6 +30,18 @@ const ALLOWED_COMMANDS = new Set([
   'screenshot',
   'getTabs',
   'closeTab',
+  'createWindow',
+  'closeWindow',
+  'getWindows',
+  'resizeWindow',
+  'setViewport',
+  // Devtools features
+  'getConsoleLogs',
+  'getNetworkRequests',
+  'scroll',
+  'waitFor',
+  'evaluate',
+  'getElementInfo',
 ]);
 ```
 
@@ -67,6 +81,15 @@ The Unix socket (`/tmp/claudezilla.sock`) is local-only:
 - Socket is cleaned up on exit
 
 **Why:** Only local processes can send commands.
+
+### 5. Extension Permission Gating
+
+When the user enables "Run in Private Windows" permission in Firefox (about:addons → Claudezilla → Details), the `firefox_navigate` command is automatically disabled:
+
+- **Permission NOT enabled (default):** All commands work in private windows. Navigate works normally.
+- **Permission enabled:** All commands work in private windows. Navigate throws an error to prevent creating non-private windows.
+
+**Why:** Users who explicitly allow the extension in private windows are signaling privacy awareness. We prevent navigation to avoid accidentally creating non-private browsing context.
 
 ## Prompt Injection Mitigation
 
@@ -112,4 +135,6 @@ If you discover a security vulnerability, please report it to: security@boot.ind
 
 ## Changelog
 
+- **0.3.0:** Auto-detect "Run in Private Windows" permission, disable navigate when enabled to prevent non-private window creation
+- **0.2.0:** Added devtools commands (network inspection, console logs, element info, evaluate), window management, viewport presets
 - **0.1.0:** Initial security model with command whitelist and structured responses

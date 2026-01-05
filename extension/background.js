@@ -223,6 +223,14 @@ async function executeInTab(tabId, action, params) {
 }
 
 /**
+ * Check if extension is allowed to run in Private Windows
+ * @returns {Promise<boolean>} True if user has enabled the permission
+ */
+async function canRunInPrivateWindows() {
+  return await browser.extension.isAllowedIncognitoAccess();
+}
+
+/**
  * SECURITY: Verify we're operating in a private window
  * Returns the active tab if in private window, throws if not
  */
@@ -261,15 +269,29 @@ async function handleCliCommand(message) {
 
       case 'version':
         result = {
-          extension: '0.2.0',
+          extension: '0.3.0',
           browser: navigator.userAgent,
           features: ['devtools', 'network', 'console', 'evaluate'],
         };
         break;
 
+      case 'canNavigate': {
+        // Check if navigate command is available (disabled if in private windows mode)
+        const allowed = await canRunInPrivateWindows();
+        result = { canNavigate: !allowed };
+        break;
+      }
+
       case 'navigate': {
         const { url } = params;
         if (!url) throw new Error('url is required');
+
+        // SECURITY: Disable navigate when extension is allowed in private windows
+        // to prevent agents from creating non-private windows
+        if (await canRunInPrivateWindows()) {
+          throw new Error('SECURITY: firefox_navigate is disabled when extension runs in Private Windows. This prevents creating non-private windows. Use other commands to interact with the current tab.');
+        }
+
         // SECURITY: Require private window, then navigate in current tab
         const currentTab = await requirePrivateWindow();
         await browser.tabs.update(currentTab.id, { url });

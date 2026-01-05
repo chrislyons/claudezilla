@@ -84,6 +84,20 @@ function sendCommand(command, params = {}) {
   });
 }
 
+/**
+ * Check if navigate command is available
+ * Returns false if extension is in Private Windows mode
+ */
+async function canNavigate() {
+  try {
+    const response = await sendCommand('canNavigate');
+    return response.result?.canNavigate ?? true;
+  } catch (error) {
+    // If we can't check, assume navigate is available (fail open)
+    return true;
+  }
+}
+
 // Tool definitions
 const TOOLS = [
   // ===== CORE BROWSER CONTROL =====
@@ -102,7 +116,7 @@ const TOOLS = [
   },
   {
     name: 'firefox_navigate',
-    description: 'Navigate to a URL in the current Firefox tab. Requires a private window (use firefox_create_window first).',
+    description: 'Navigate to a URL in the current Firefox tab. Requires a private window (use firefox_create_window first). Disabled if extension is allowed to run in Private Windows to prevent creating non-private windows.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -405,7 +419,16 @@ const server = new Server(
 
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: TOOLS };
+  // Dynamically filter tools based on extension permission state
+  const navigateAllowed = await canNavigate();
+
+  let availableTools = TOOLS;
+  if (!navigateAllowed) {
+    // Filter out firefox_navigate if permission is enabled (private windows mode)
+    availableTools = TOOLS.filter(tool => tool.name !== 'firefox_navigate');
+  }
+
+  return { tools: availableTools };
 });
 
 // Handle tool calls
