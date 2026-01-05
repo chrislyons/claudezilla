@@ -144,10 +144,10 @@ function handleExtensionMessage(message) {
       id,
       success: true,
       result: {
-        host: '0.4.2',
+        host: '0.4.5',
         node: process.version,
         platform: process.platform,
-        features: ['devtools', 'network', 'console', 'evaluate'],
+        features: ['security-hardened'],
       },
     });
   }
