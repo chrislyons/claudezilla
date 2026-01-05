@@ -18,6 +18,17 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+claudezilla-debug.log
+
+# Claude Code local settings
+.claude/
 
 # Generated files
 install/claudezilla.json
+
+# Runtime files
+/tmp/claudezilla.sock
+
+# Lock files (keep root package-lock if added)
+mcp/package-lock.json
+host/package-lock.json
