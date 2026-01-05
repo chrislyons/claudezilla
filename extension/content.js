@@ -55,7 +55,7 @@ const CLAUDE_LOGO_SVG = `
   </defs>
 
   <!-- Master group with breathing animation (only when active) -->
-  <g id="claudezilla-breathe" style="transform-origin: center; transform-box: fill-box; transform: scale(1.30);">
+  <g id="claudezilla-breathe" style="transform-origin: center; transform-box: fill-box; transform: scale(1.20);">
 
     <!-- LAYER 1: Tesseract frame -->
     <path d="M32 8 L54 18 L54 46 L32 56 L10 46 L10 18 Z"
@@ -157,8 +157,8 @@ function initWatermark() {
     style.id = 'claudezilla-watermark-styles';
     style.textContent = `
       @keyframes claudezilla-breathe {
-        0%, 100% { transform: scale(1.30); }
-        50% { transform: scale(1.34); }
+        0%, 100% { transform: scale(1.20); }
+        50% { transform: scale(1.24); }
       }
       #claudezilla-breathe.active {
         animation: claudezilla-breathe 4s ease-in-out infinite;
@@ -253,6 +253,7 @@ function initWatermark() {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: visible;
     animation: claudezilla-glow-throb 4s ease-in-out infinite;
     pointer-events: auto;
     cursor: pointer;
