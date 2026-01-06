@@ -1,6 +1,6 @@
 /**
  * Claudezilla Popup Script
- * v0.4.2 - Visual effects settings
+ * v0.5.0 - Concentration loop support
  */
 
 // Elements
@@ -12,6 +12,12 @@ const pingBtn = document.getElementById('pingBtn');
 const showWatermarkCheckbox = document.getElementById('showWatermark');
 const showFocusglowCheckbox = document.getElementById('showFocusglow');
 const compressImagesCheckbox = document.getElementById('compressImages');
+
+// Loop elements
+const loopSection = document.getElementById('loopSection');
+const loopIterationText = document.getElementById('loopIterationText');
+const loopPromptPreview = document.getElementById('loopPromptPreview');
+const stopLoopBtn = document.getElementById('stopLoopBtn');
 
 // Default settings
 const DEFAULT_SETTINGS = {
@@ -155,6 +161,56 @@ async function checkFirstRun() {
   }
 }
 
+/**
+ * Check and display loop status
+ */
+async function checkLoopStatus() {
+  try {
+    const result = await sendMessage('getLoopState');
+
+    if (result && result.active) {
+      loopSection.style.display = 'block';
+
+      // Update iteration text
+      if (result.maxIterations > 0) {
+        loopIterationText.textContent = `Iteration ${result.iteration + 1}/${result.maxIterations}`;
+      } else {
+        loopIterationText.textContent = `Iteration ${result.iteration + 1} (unlimited)`;
+      }
+
+      // Update prompt preview
+      const promptPreview = result.prompt.length > 50
+        ? result.prompt.slice(0, 50) + '...'
+        : result.prompt;
+      loopPromptPreview.textContent = promptPreview;
+    } else {
+      loopSection.style.display = 'none';
+    }
+  } catch (e) {
+    // Loop status check failed - hide section
+    loopSection.style.display = 'none';
+  }
+}
+
+/**
+ * Stop the active loop
+ */
+async function stopLoop() {
+  try {
+    stopLoopBtn.disabled = true;
+    stopLoopBtn.textContent = 'Stopping...';
+
+    await sendMessage('stopLoop');
+
+    loopSection.style.display = 'none';
+  } catch (e) {
+    showError('Failed to stop loop: ' + e.message);
+  } finally {
+    stopLoopBtn.disabled = false;
+    stopLoopBtn.textContent = 'Stop Loop';
+  }
+}
+
 // Initialize
 async function init() {
   // Check for first run
@@ -174,8 +230,16 @@ async function init() {
   // Test connection on popup open
   testConnection();
 
+  // Check loop status
+  await checkLoopStatus();
+
   // Manual test button
   pingBtn.addEventListener('click', testConnection);
+
+  // Stop loop button
+  if (stopLoopBtn) {
+    stopLoopBtn.addEventListener('click', stopLoop);
+  }
 
   // Support link - open support page in new tab
   const supportLink = document.getElementById('supportLink');
@@ -186,6 +250,9 @@ async function init() {
       window.close(); // Close popup after opening
     });
   }
+
+  // Periodically refresh loop status while popup is open
+  setInterval(checkLoopStatus, 2000);
 }
 
 init();

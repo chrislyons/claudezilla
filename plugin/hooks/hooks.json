@@ -1,0 +1,15 @@
+{
+  "description": "Claudezilla concentration loop - intercepts session exit to enable persistent iteration",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

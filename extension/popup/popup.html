@@ -200,7 +200,7 @@
 <body>
   <h1>
     Claudezilla
-    <span class="version">v0.4.5</span>
+    <span class="version">v0.5.0</span>
   </h1>
 
   <div class="status">
@@ -250,6 +250,33 @@
       </div>
     </div>
   </div>
+
+  <div id="loopSection" class="section" style="display: none;">
+    <div class="section-title">Concentration Loop</div>
+    <div class="settings-group">
+      <div id="loopStatus" style="padding: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div id="loopIndicator" style="width: 8px; height: 8px; border-radius: 50%; background: #22C55E; animation: pulse 1.5s infinite;"></div>
+          <span id="loopIterationText" style="font-weight: 500;">Iteration 1/20</span>
+        </div>
+        <div id="loopPromptPreview" style="font-size: 11px; color: #888; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          Build a REST API for todos...
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="stopLoopBtn" style="flex: 1; background: #EF4444; padding: 8px 12px; font-size: 12px;">
+            Stop Loop
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
 
   <div id="info" class="info" style="display: none;"></div>
 

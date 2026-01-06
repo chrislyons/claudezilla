@@ -68,7 +68,25 @@ const ALLOWED_COMMANDS = new Set([
   'getAccessibilitySnapshot',
   // Keyboard input
   'pressKey',
+  // Loop/concentration feature
+  'startLoop',
+  'stopLoop',
+  'getLoopState',
+  'incrementLoopIteration',
 ]);
+
+/**
+ * Loop state storage (in-memory)
+ * Reset on host restart - by design to prevent orphaned loops
+ */
+let loopState = {
+  active: false,
+  prompt: '',
+  iteration: 0,
+  maxIterations: 0,
+  completionPromise: null,
+  startedAt: null,
+};
 
 // SECURITY: Log to stderr and debug file with restricted permissions
 function log(...args) {
@@ -91,6 +109,64 @@ log('Script starting, cwd:', process.cwd());
 const pendingCliRequests = new Map();
 
 /**
+ * Handle loop commands directly in host (not forwarded to extension)
+ */
+function handleLoopCommand(command, params, callback) {
+  switch (command) {
+    case 'startLoop': {
+      const { prompt, maxIterations = 0, completionPromise = null } = params;
+      if (!prompt) {
+        callback({ success: false, error: 'Prompt is required' });
+        return;
+      }
+      loopState = {
+        active: true,
+        prompt,
+        iteration: 0,
+        maxIterations: Number(maxIterations) || 0,
+        completionPromise: completionPromise || null,
+        startedAt: new Date().toISOString(),
+      };
+      log(`Loop started: "${prompt.slice(0, 50)}..." max=${maxIterations}`);
+      callback({ success: true, result: { ...loopState } });
+      break;
+    }
+
+    case 'stopLoop': {
+      const wasActive = loopState.active;
+      loopState = {
+        active: false,
+        prompt: '',
+        iteration: 0,
+        maxIterations: 0,
+        completionPromise: null,
+        startedAt: null,
+      };
+      log('Loop stopped');
+      callback({ success: true, result: { stopped: wasActive } });
+      break;
+    }
+
+    case 'getLoopState': {
+      callback({ success: true, result: { ...loopState } });
+      break;
+    }
+
+    case 'incrementLoopIteration': {
+      if (loopState.active) {
+        loopState.iteration += 1;
+        log(`Loop iteration: ${loopState.iteration}`);
+      }
+      callback({ success: true, result: { iteration: loopState.iteration } });
+      break;
+    }
+
+    default:
+      callback({ success: false, error: `Unknown loop command: ${command}` });
+  }
+}
+
+/**
  * Handle command from CLI (via socket)
  * SECURITY: Validates command against whitelist
  */
@@ -98,6 +174,13 @@ function handleCliCommand(command, params, callback) {
   // SECURITY: Reject non-whitelisted commands
   if (!ALLOWED_COMMANDS.has(command)) {
     callback({ success: false, error: `Command not allowed: ${command}` });
+    return;
+  }
+
+  // Handle loop commands directly in host (no extension needed)
+  const LOOP_COMMANDS = ['startLoop', 'stopLoop', 'getLoopState', 'incrementLoopIteration'];
+  if (LOOP_COMMANDS.includes(command)) {
+    handleLoopCommand(command, params, callback);
     return;
   }
 
@@ -144,10 +227,10 @@ function handleExtensionMessage(message) {
       id,
       success: true,
       result: {
-        host: '0.4.5',
+        host: '0.5.0',
         node: process.version,
         platform: process.platform,
-        features: ['security-hardened'],
+        features: ['security-hardened', 'concentration-loop'],
       },
     });
   }

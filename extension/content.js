@@ -54,8 +54,8 @@ const CLAUDE_LOGO_SVG = `
     </radialGradient>
   </defs>
 
-  <!-- Master group scaled to fill container -->
-  <g id="claudezilla-breathe" style="transform-origin: center; transform-box: fill-box; transform: scale(1.20);">
+  <!-- Master group scaled around center to fill container -->
+  <g id="claudezilla-breathe" transform="translate(32, 32) scale(1.20) translate(-32, -32)">
 
     <!-- LAYER 1: Tesseract frame -->
     <path d="M32 8 L54 18 L54 46 L32 56 L10 46 L10 18 Z"
@@ -186,8 +186,8 @@ function initWatermark() {
       }
       #claudezilla-speech-bubble {
         position: absolute !important;
-        top: 37px !important;
-        right: 34px !important;
+        top: 48px !important;
+        right: 45px !important;
         width: 8px;
         height: 8px;
         background: #f5f5f4;
