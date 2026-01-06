@@ -12,7 +12,11 @@ Give Claude the ability to browse the web, fill out forms, take screenshots, and
 
 ## Quick Start
 
-### 1. Install
+### 1. Install the extension
+
+Install from **[Firefox Add-ons](https://addons.mozilla.org/firefox/addon/claudezilla/)**
+
+### 2. Install the native host
 
 ```bash
 git clone https://github.com/boot-industries/claudezilla.git
@@ -24,14 +28,6 @@ cd claudezilla
 # Linux
 ./install/install-linux.sh
 ```
-
-### 2. Install the extension
-
-Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/claudezilla/), or load manually:
-
-1. Open Firefox → `about:debugging`
-2. Click **"This Firefox"** → **"Load Temporary Add-on"**
-3. Select `extension/manifest.json`
 
 ### 3. Connect to Claude Code
 
