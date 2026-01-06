@@ -670,7 +670,7 @@ async function handleCliCommand(message) {
                 message: `Tab pool full (${MAX_TABS}/${MAX_TABS}). You have no tabs to evict.`,
                 tabPool: `${claudezillaWindow.tabs.length}/${MAX_TABS}`,
                 ownerBreakdown: breakdown,
-                hint: 'Wait for other agents to release tabs, or ask them to close tabs.'
+                hint: 'Use firefox_request_tab_space to queue a slot request. Agents with >4 tabs will be notified.'
               };
             }
           }
@@ -789,12 +789,143 @@ async function handleCliCommand(message) {
           activeTabId = lastTab?.tabId || null;
         }
 
+        // Check if any pending slot requests can now be fulfilled
+        const fulfilledRequest = pendingSlotRequests.shift();
+
         result = {
           closed: true,
           tabId: closeTabId,
           tabCount: claudezillaWindow.tabs.length,
           maxTabs: MAX_TABS,
-          message: `Tab closed. ${claudezillaWindow.tabs.length}/${MAX_TABS} tabs remaining.`
+          message: `Tab closed. ${claudezillaWindow.tabs.length}/${MAX_TABS} tabs remaining.`,
+          slotFreed: fulfilledRequest ? fulfilledRequest.agentId : null
+        };
+        break;
+      }
+
+      case 'requestTabSpace': {
+        // Blocked agent requests tab space from agents with >4 tabs
+        const { agentId } = params;
+
+        if (!agentId) {
+          throw new Error('agentId is required');
+        }
+
+        // Check if agent already has a pending request
+        const existingRequest = pendingSlotRequests.find(r => r.agentId === agentId);
+        if (existingRequest) {
+          result = {
+            queued: true,
+            position: pendingSlotRequests.indexOf(existingRequest) + 1,
+            message: 'Already in queue for tab space'
+          };
+          break;
+        }
+
+        // Find agents with >4 tabs who could grant space
+        const ownerCounts = {};
+        if (claudezillaWindow) {
+          for (const t of claudezillaWindow.tabs) {
+            const owner = t.ownerId || 'unknown';
+            ownerCounts[owner] = (ownerCounts[owner] || 0) + 1;
+          }
+        }
+        const tabHeavyAgents = Object.entries(ownerCounts)
+          .filter(([_, count]) => count > 4)
+          .map(([id, count]) => ({ agentId: id.slice(0, 20) + '...', tabCount: count }));
+
+        // Add to pending queue
+        pendingSlotRequests.push({ agentId, requestedAt: Date.now() });
+
+        result = {
+          queued: true,
+          position: pendingSlotRequests.length,
+          tabHeavyAgents,
+          message: tabHeavyAgents.length > 0
+            ? `Request queued. ${tabHeavyAgents.length} agent(s) with >4 tabs notified.`
+            : 'Request queued. No tab-heavy agents currently.'
+        };
+        break;
+      }
+
+      case 'grantTabSpace': {
+        // Agent voluntarily releases their oldest tab to help a waiting agent
+        const { agentId } = params;
+
+        if (!agentId) {
+          throw new Error('agentId is required');
+        }
+
+        if (!claudezillaWindow) {
+          throw new Error('No Claudezilla window active');
+        }
+
+        // Find this agent's tabs
+        const ownTabs = claudezillaWindow.tabs.filter(t => t.ownerId === agentId);
+
+        if (ownTabs.length === 0) {
+          throw new Error('You have no tabs to release');
+        }
+
+        if (ownTabs.length <= 2) {
+          throw new Error(`You only have ${ownTabs.length} tab(s). Keep at least 2 before granting space to others.`);
+        }
+
+        // Check if anyone is waiting
+        if (pendingSlotRequests.length === 0) {
+          result = {
+            granted: false,
+            message: 'No agents waiting for tab space. Your tabs are safe.'
+          };
+          break;
+        }
+
+        // Release oldest tab
+        const oldestOwn = ownTabs[0];
+        const tabIndex = claudezillaWindow.tabs.findIndex(t => t.tabId === oldestOwn.tabId);
+        if (tabIndex !== -1) {
+          claudezillaWindow.tabs.splice(tabIndex, 1);
+        }
+
+        try {
+          await browser.tabs.remove(oldestOwn.tabId);
+        } catch (e) {
+          console.log('[claudezilla] Could not close tab:', e.message);
+        }
+
+        // Notify waiting agent
+        const grantedTo = pendingSlotRequests.shift();
+
+        result = {
+          granted: true,
+          closedTabId: oldestOwn.tabId,
+          grantedTo: grantedTo.agentId.slice(0, 20) + '...',
+          tabCount: claudezillaWindow.tabs.length,
+          maxTabs: MAX_TABS,
+          pendingRequests: pendingSlotRequests.length,
+          message: `Released tab ${oldestOwn.tabId}. Slot granted to waiting agent.`
+        };
+        break;
+      }
+
+      case 'getSlotRequests': {
+        // Check pending slot requests and your tab count
+        const { agentId } = params;
+
+        const ownTabCount = claudezillaWindow
+          ? claudezillaWindow.tabs.filter(t => t.ownerId === agentId).length
+          : 0;
+
+        result = {
+          pendingRequests: pendingSlotRequests.map(r => ({
+            agentId: r.agentId.slice(0, 20) + '...',
+            waitingMs: Date.now() - r.requestedAt
+          })),
+          yourTabCount: ownTabCount,
+          shouldGrant: ownTabCount > 4 && pendingSlotRequests.length > 0,
+          hint: ownTabCount > 4 && pendingSlotRequests.length > 0
+            ? 'You have >4 tabs and agents are waiting. Consider using grantTabSpace.'
+            : null
         };
         break;
       }

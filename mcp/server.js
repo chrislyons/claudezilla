@@ -351,6 +351,30 @@ const TOOLS = [
     },
   },
   {
+    name: 'firefox_request_tab_space',
+    description: 'Request tab space when blocked by POOL_FULL. Queues your request and notifies agents with >4 tabs. They can grant space using firefox_grant_tab_space. Use this when you cannot create tabs because other agents have filled the pool.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'firefox_grant_tab_space',
+    description: 'Voluntarily release your oldest tab to help a waiting agent. Only works if you have >2 tabs and there are pending slot requests. Good citizenship for multi-agent cooperation.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'firefox_get_slot_requests',
+    description: 'Check if other agents are waiting for tab space. Shows pending requests and whether you should grant space (if you have >4 tabs).',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
     name: 'firefox_resize_window',
     description: 'Resize and/or reposition a browser window.',
     inputSchema: {
@@ -682,13 +706,17 @@ const TOOL_TO_COMMAND = {
   firefox_start_loop: 'startLoop',
   firefox_stop_loop: 'stopLoop',
   firefox_loop_status: 'getLoopState',
+  // Tab space coordination (mercy system)
+  firefox_request_tab_space: 'requestTabSpace',
+  firefox_grant_tab_space: 'grantTabSpace',
+  firefox_get_slot_requests: 'getSlotRequests',
 };
 
 // Create MCP server
 const server = new Server(
   {
     name: 'claudezilla',
-    version: '0.4.8',
+    version: '0.4.9',
   },
   {
     capabilities: {
@@ -745,6 +773,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       'firefox_get_accessibility_snapshot',
       'firefox_press_key',
       'firefox_screenshot',
+      'firefox_request_tab_space',
+      'firefox_grant_tab_space',
+      'firefox_get_slot_requests',
     ];
     if (OWNERSHIP_COMMANDS.includes(name)) {
       commandParams.agentId = AGENT_ID;

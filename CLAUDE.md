@@ -254,14 +254,20 @@ Dynamic page readiness detection replaces hardcoded delays. Screenshots now wait
 
 **Tab Pool Coordination (v0.4.9):**
 - Agents can only evict their **own** tabs when pool is full
-- If agent has no tabs but needs one, returns `POOL_FULL` error:
-  ```
-  POOL_FULL: Tab pool is full and you have no tabs to evict.
-    Tab pool: 10/10
-    Owner breakdown: agent_ec2e...: 7, agent_d99a...: 3
-    Hint: Wait for other agents to release tabs, or ask them to close tabs.
-  ```
+- If agent has no tabs but needs one, returns `POOL_FULL` error with hint to use mercy system
 - No silent eviction of other agents' tabs
+
+**Mercy System (v0.4.9):**
+When blocked by POOL_FULL, agents can request tab space:
+1. Blocked agent calls `firefox_request_tab_space` → queues request
+2. Agents with >4 tabs see pending requests via `firefox_get_slot_requests`
+3. Generous agent calls `firefox_grant_tab_space` → releases oldest tab to waiting agent
+
+| Command | Description |
+|---------|-------------|
+| `firefox_request_tab_space` | Queue request for tab space (used when POOL_FULL) |
+| `firefox_grant_tab_space` | Release oldest tab to help waiting agent (requires >2 tabs) |
+| `firefox_get_slot_requests` | Check if agents are waiting for space |
 
 **Screenshot Mutex:**
 - All screenshot requests are serialized via promise chain
