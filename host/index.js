@@ -82,6 +82,10 @@ const ALLOWED_COMMANDS = new Set([
   'stopLoop',
   'getLoopState',
   'incrementLoopIteration',
+  // Tab space coordination (mercy system)
+  'requestTabSpace',
+  'grantTabSpace',
+  'getSlotRequests',
 ]);
 
 /**
