@@ -17,11 +17,13 @@
   <meta name="twitter:title" content="Claudezilla">
   <meta name="twitter:description" content="Firefox browser automation for Claude Code">
 
-  <!-- Fonts -->
+  <!-- Fonts (preconnect for speed) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/styles.css?v=2">
 </head>
 <body>
   <!-- Navigation -->
@@ -278,6 +280,15 @@ cd claudezilla && ./install/install-macos.sh</code></pre>
     </section>
   </div>
 
+  <!-- Thank You Modal -->
+  <div id="thanksModal" class="thanks-modal" style="display: none;">
+    <div class="thanks-content">
+      <span class="thanks-icon">🙏</span>
+      <h2>Thank You!</h2>
+      <p>Your support means the world.</p>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-content">
@@ -291,5 +302,25 @@ cd claudezilla && ./install/install-macos.sh</code></pre>
       </div>
     </div>
   </footer>
+
+  <script>
+    // Thank you modal on #thanks hash
+    if (window.location.hash === '#thanks') {
+      const modal = document.getElementById('thanksModal');
+      modal.style.display = 'flex';
+      // Clear hash from URL without reload
+      history.replaceState(null, '', window.location.pathname);
+      // Auto-dismiss after 4 seconds
+      setTimeout(() => {
+        modal.classList.add('fade-out');
+        setTimeout(() => { modal.style.display = 'none'; }, 500);
+      }, 4000);
+      // Click to dismiss early
+      modal.addEventListener('click', () => {
+        modal.classList.add('fade-out');
+        setTimeout(() => { modal.style.display = 'none'; }, 500);
+      });
+    }
+  </script>
 </body>
 </html>

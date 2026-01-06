@@ -12,11 +12,13 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://claudezilla.com/support.html">
 
-  <!-- Fonts -->
+  <!-- Fonts (preconnect + preload for speed) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/assets/support.css">
+  <link rel="stylesheet" href="/assets/support.css?v=2">
 </head>
 <body>
   <!-- Navigation -->
@@ -108,6 +110,15 @@
     </div>
   </div>
 
-  <script src="/scripts/support.js"></script>
+  <!-- Thank You Modal -->
+  <div id="thanksModal" class="thanks-modal" style="display: none;">
+    <div class="thanks-content">
+      <span class="thanks-icon">🙏</span>
+      <h2>Thank You!</h2>
+      <p>Your support means the world.</p>
+    </div>
+  </div>
+
+  <script src="/scripts/support.js?v=2"></script>
 </body>
 </html>
