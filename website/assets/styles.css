@@ -96,7 +96,7 @@ body::before {
 
 /* Nav Install Button */
 .nav-install {
-  background: var(--terracotta);
+  background: linear-gradient(135deg, #b83e28 0%, #D14D32 50%, #FCD34D 100%);
   color: var(--bg-dark) !important;
   padding: 8px 16px;
   border-radius: 6px;
@@ -106,7 +106,6 @@ body::before {
 }
 
 .nav-install:hover {
-  background: #E05A38;
   transform: translateY(-1px);
   box-shadow: 0 4px 20px var(--terracotta-glow);
   color: var(--bg-dark) !important;
