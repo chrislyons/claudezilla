@@ -33,6 +33,9 @@ let screenshotLock = Promise.resolve();
 let screenshotMutexHolder = null;    // { agentId, acquiredAt, operation }
 const MUTEX_BUSY_THRESHOLD_MS = 5000; // Return MUTEX_BUSY if held longer than this
 
+// Tab pool coordination - pending slot requests from agents
+const pendingSlotRequests = [];  // [{ agentId, requestedAt }]
+
 // Tab group colors (Firefox 138+)
 const SESSION_COLORS = ['blue', 'red', 'yellow', 'green', 'pink', 'cyan', 'orange', 'grey'];
 
@@ -631,15 +634,44 @@ async function handleCliCommand(message) {
 
         if (claudezillaWindow) {
           // Reuse existing window - create new tab
-          // If at max tabs, close oldest first
+          // If at max tabs, try to evict ONLY OWN tabs first
           if (claudezillaWindow.tabs.length >= MAX_TABS) {
-            const oldest = claudezillaWindow.tabs.shift(); // Remove oldest
-            closedTabId = oldest.tabId;
-            try {
-              await browser.tabs.remove(closedTabId);
-              console.log(`[claudezilla] Closed oldest tab ${closedTabId} (max ${MAX_TABS} tabs)`);
-            } catch (e) {
-              console.log('[claudezilla] Could not close old tab:', e.message);
+            // Find tabs owned by this agent
+            const ownTabs = claudezillaWindow.tabs.filter(t => t.ownerId === ownerId);
+
+            if (ownTabs.length > 0) {
+              // Evict oldest of OUR OWN tabs only
+              const oldestOwn = ownTabs[0]; // First = oldest
+              const tabIndex = claudezillaWindow.tabs.findIndex(t => t.tabId === oldestOwn.tabId);
+              if (tabIndex !== -1) {
+                claudezillaWindow.tabs.splice(tabIndex, 1);
+              }
+              closedTabId = oldestOwn.tabId;
+              try {
+                await browser.tabs.remove(closedTabId);
+                console.log(`[claudezilla] Evicted own tab ${closedTabId} (max ${MAX_TABS} tabs)`);
+              } catch (e) {
+                console.log('[claudezilla] Could not close own tab:', e.message);
+              }
+            } else {
+              // Agent has NO tabs in pool - cannot evict others' tabs
+              // Build owner breakdown for error message
+              const ownerCounts = {};
+              for (const t of claudezillaWindow.tabs) {
+                const shortId = t.ownerId ? t.ownerId.slice(0, 12) + '...' : 'unknown';
+                ownerCounts[shortId] = (ownerCounts[shortId] || 0) + 1;
+              }
+              const breakdown = Object.entries(ownerCounts)
+                .map(([id, count]) => `${id}: ${count}`)
+                .join(', ');
+
+              throw {
+                code: 'POOL_FULL',
+                message: `Tab pool full (${MAX_TABS}/${MAX_TABS}). You have no tabs to evict.`,
+                tabPool: `${claudezillaWindow.tabs.length}/${MAX_TABS}`,
+                ownerBreakdown: breakdown,
+                hint: 'Wait for other agents to release tabs, or ask them to close tabs.'
+              };
             }
           }
 

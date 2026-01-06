@@ -793,6 +793,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           `  Tab pool: ${response.details.tabPool || 'unknown'}\n` +
           `  Retry after: ${response.details.retryAfterMs}ms\n` +
           `  Hint: ${response.details.hint}`;
+      } else if (response.details?.code === 'POOL_FULL') {
+        errorText = `POOL_FULL: Tab pool is full and you have no tabs to evict.\n` +
+          `  Tab pool: ${response.details.tabPool}\n` +
+          `  Owner breakdown: ${response.details.ownerBreakdown}\n` +
+          `  Hint: ${response.details.hint}`;
       }
       return {
         content: [{ type: 'text', text: errorText }],
