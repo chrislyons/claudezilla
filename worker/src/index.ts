@@ -15,6 +15,7 @@ interface Env {
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   FRONTEND_URL?: string;
+  DB?: D1Database;
 }
 
 // SECURITY: Allowed origins for CORS and request validation
@@ -182,6 +183,80 @@ export default {
 
       } catch (error) {
         console.error('Checkout error:', error);
+        const message = error instanceof Error ? error.message : 'Internal server error';
+        return Response.json(
+          { error: message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
+    // /notify endpoint - Email capture
+    if (url.pathname === '/notify' && request.method === 'POST') {
+      // SECURITY: Origin validation
+      if (!isAllowedOrigin) {
+        return Response.json(
+          { error: 'Origin not allowed' },
+          { status: 403, headers: corsHeaders }
+        );
+      }
+
+      try {
+        const body = await request.json();
+        const { email } = body;
+
+        // Validation: email must be string
+        if (typeof email !== 'string') {
+          return Response.json(
+            { error: 'Email must be a string' },
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        // Validation: email format (basic check)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return Response.json(
+            { error: 'Invalid email format' },
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        // Validation: length limits
+        if (email.length < 3 || email.length > 254) {
+          return Response.json(
+            { error: 'Email length must be 3-254 characters' },
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        // Get D1 database binding
+        const db = env.DB;
+        if (!db) {
+          return Response.json(
+            { error: 'Database not configured' },
+            { status: 500, headers: corsHeaders }
+          );
+        }
+
+        // Insert email (ignore duplicates)
+        const result = await db.prepare(
+          'INSERT OR IGNORE INTO email_signups (email, created_at) VALUES (?, ?)'
+        ).bind(email.toLowerCase(), Date.now()).run();
+
+        // Check if inserted (result.meta.changes > 0) or duplicate
+        const isDuplicate = result.meta.changes === 0;
+
+        return Response.json(
+          {
+            success: true,
+            message: isDuplicate ? 'Already subscribed' : 'Subscribed successfully'
+          },
+          { status: 200, headers: corsHeaders }
+        );
+
+      } catch (error) {
+        console.error('Notify error:', error);
         const message = error instanceof Error ? error.message : 'Internal server error';
         return Response.json(
           { error: message },

@@ -90,6 +90,54 @@ body::before {
   color: var(--terracotta);
 }
 
+/* Nav Install Button */
+.nav-install {
+  background: var(--terracotta);
+  color: var(--bg-dark) !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px var(--terracotta-glow);
+}
+
+.nav-install:hover {
+  background: #E05A38;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--terracotta-glow);
+  color: var(--bg-dark) !important;
+}
+
+/* Nav GitHub Button */
+.nav-github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-github:hover {
+  background: #333;
+  border-color: var(--terracotta);
+  transform: translateY(-1px);
+}
+
+.nav-github svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--text-secondary);
+  transition: fill 0.3s;
+}
+
+.nav-github:hover svg {
+  fill: var(--text-primary);
+}
+
 .container {
   position: relative;
   z-index: 1;
@@ -514,8 +562,14 @@ label {
 }
 
 @media (max-width: 600px) {
+  /* Container full-width on mobile (remove wasted horizontal margins) */
+  .container {
+    padding: 32px 16px 40px; /* Reduce from 32px 32px 40px */
+  }
+
+  /* Support card padding reduction */
   .support-card {
-    padding: 32px 24px;
+    padding: 24px 20px; /* Reduce from 32px 24px */
   }
 
   h1 {
@@ -531,6 +585,25 @@ label {
   .amount-pill {
     padding: 14px;
     font-size: 18px;
+  }
+
+  /* Thanks modal mobile scaling */
+  .thanks-content {
+    padding: 32px 24px; /* Reduce from 48px 64px */
+    border-radius: 12px; /* Reduce from 16px */
+  }
+
+  .thanks-content h2 {
+    font-size: 24px; /* Reduce from 32px */
+  }
+
+  .thanks-content p {
+    font-size: 14px; /* Reduce from 16px */
+  }
+
+  .thanks-icon {
+    width: 48px;
+    height: 48px;
   }
 }
 

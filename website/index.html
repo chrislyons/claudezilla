@@ -7,15 +7,19 @@
   <meta name="description" content="Privacy-first Firefox extension for Claude Code. Browser automation without Chrome. Navigate, automate, extract data through natural language.">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Claudezilla">
+  <meta property="og:title" content="CLAUDEZILLA">
   <meta property="og:description" content="Firefox browser automation for Claude Code. Privacy-first, multi-agent safe.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://claudezilla.com">
+  <meta property="og:image" content="https://claudezilla.com/assets/images/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Claudezilla">
+  <meta name="twitter:title" content="CLAUDEZILLA">
   <meta name="twitter:description" content="Firefox browser automation for Claude Code">
+  <meta name="twitter:image" content="https://claudezilla.com/assets/images/og-image.png">
 
   <!-- Fonts (preconnect for speed) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +27,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/assets/styles.css?v=2">
+  <link rel="stylesheet" href="/assets/styles.css?v=7">
 </head>
 <body>
   <!-- Navigation -->
@@ -34,7 +38,10 @@
       <a href="/extension.html">Setup</a>
       <a href="/docs.html">Docs</a>
       <a href="/support.html">Support</a>
-      <a href="https://github.com/boot-industries/claudezilla" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/boot-industries/claudezilla" class="nav-github" target="_blank" rel="noopener" title="View on GitHub">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+      <a href="https://addons.mozilla.org/firefox/addon/claudezilla/" class="nav-install" target="_blank" rel="noopener">Install</a>
     </div>
   </nav>
 
@@ -48,9 +55,20 @@
           Give Claude Code full control of Mozilla Firefox. Navigate, automate, extract data, and take screenshots
           through natural language. No Chrome required. Privacy-first. Multi-agent safe.
         </p>
-        <div class="cta-buttons">
-          <a href="/extension.html" class="btn-primary">Get Started</a>
-          <a href="/support.html" class="btn-secondary">Support</a>
+        <div class="cta-grid">
+          <a href="https://addons.mozilla.org/firefox/addon/claudezilla/" class="firefox-badge" target="_blank" rel="noopener">
+            <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get Claudezilla for Firefox">
+          </a>
+          <a href="/extension.html" class="btn-secondary">Manual Setup</a>
+          <button id="notifyBtn" class="btn-notify">Get Notified</button>
+          <div id="notifyForm" class="notify-form" style="display: none;">
+            <input type="email" id="notifyEmail" placeholder="your@email.com" required>
+            <button id="submitNotify" class="btn-notify-submit">→</button>
+            <div id="notifyError" class="notify-error" style="display: none;"></div>
+          </div>
+          <div id="notifySuccess" class="notify-success" style="display: none;">
+            ✓ You'll be notified!
+          </div>
         </div>
       </div>
       <div class="hero-visual">
@@ -322,5 +340,6 @@ cd claudezilla && ./install/install-macos.sh</code></pre>
       });
     }
   </script>
+  <script src="/scripts/notify.js"></script>
 </body>
 </html>

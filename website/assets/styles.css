@@ -94,6 +94,133 @@ body::before {
   color: var(--terracotta);
 }
 
+/* Nav Install Button */
+.nav-install {
+  background: var(--terracotta);
+  color: var(--bg-dark) !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px var(--terracotta-glow);
+}
+
+.nav-install:hover {
+  background: #E05A38;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--terracotta-glow);
+  color: var(--bg-dark) !important;
+}
+
+/* Nav GitHub Button */
+.nav-github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-github:hover {
+  background: #333;
+  border-color: var(--terracotta);
+  transform: translateY(-1px);
+}
+
+.nav-github svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--text-secondary);
+  transition: fill 0.3s;
+}
+
+.nav-github:hover svg {
+  fill: var(--text-primary);
+}
+
+/* Firefox Badge */
+.firefox-badge {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.firefox-badge:hover {
+  transform: translateY(-2px);
+}
+
+.firefox-badge img {
+  height: 60px;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+/* Hero CTA Grid */
+.cta-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 16px;
+  animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
+  width: fit-content;
+}
+
+.cta-grid .firefox-badge {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.cta-grid .btn-secondary {
+  grid-column: 2;
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+.cta-grid .btn-notify {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-content: center;
+}
+
+.cta-grid .notify-form,
+.cta-grid .notify-success {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+/* Install hint text below badge */
+.install-hint {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 16px;
+  animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
+}
+
+/* Extension page badge section */
+.install-badge-section {
+  text-align: center;
+  padding: 32px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 2px solid rgba(209, 77, 50, 0.2);
+  margin-bottom: 48px;
+}
+
+.install-badge-section p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+
+.install-badge-section .firefox-badge img {
+  height: 72px;
+}
+
 /* Container */
 .container {
   position: relative;
@@ -223,6 +350,105 @@ body::before {
 .btn-secondary:hover {
   border-color: var(--terracotta);
   color: var(--terracotta);
+}
+
+/* Notify Button */
+.btn-notify {
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 2px solid var(--text-secondary);
+}
+
+.btn-notify:hover {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+/* Notify Form (inline expansion) */
+.notify-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.notify-form input[type="email"] {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--text-secondary);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  flex: 1;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.notify-form input[type="email"]:focus {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 12px var(--terracotta-glow);
+}
+
+.notify-form input[type="email"]::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.btn-notify-submit {
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: var(--terracotta);
+  border: none;
+  color: var(--bg-dark);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px var(--terracotta-glow);
+}
+
+.btn-notify-submit:hover {
+  background: #E05A38;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--terracotta-glow);
+}
+
+.notify-error {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid #EF4444;
+  color: #EF4444;
+  font-size: 12px;
+  animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notify-success {
+  padding: 12px 24px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 2px solid #22C55E;
+  color: #22C55E;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Monster Logo */
@@ -504,6 +730,8 @@ body::before {
   color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 24px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Code blocks */
@@ -532,6 +760,9 @@ pre code {
   border: none;
   font-size: 14px;
   line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 /* Visual Diagrams (from welcome.html) */
@@ -542,6 +773,8 @@ pre code {
   padding: 24px;
   position: relative;
   overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .diagram::before {
@@ -1020,6 +1253,59 @@ pre code {
     gap: 24px;
     text-align: center;
   }
+
+  /* Diagram mobile scaling */
+  .diagram {
+    padding: 16px; /* Reduce from 24px */
+    overflow-x: auto; /* Allow horizontal scroll if needed */
+  }
+
+  .browser-chrome {
+    padding: 6px; /* Reduce from 8px */
+  }
+
+  .browser-tab {
+    font-size: 10px; /* Reduce from 11px */
+    padding: 5px 8px; /* Reduce from 6px 12px */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .browser-address {
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .extension-item {
+    padding: 10px; /* Reduce from 12px */
+  }
+
+  .extension-item .icon {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .extension-item .name {
+    font-size: 13px; /* Reduce from 14px */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .extension-item .description {
+    font-size: 10px; /* Reduce from 11px */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Arrow indicators - hide on mobile (positioning breaks) */
+  .arrow-indicator {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1040,6 +1326,135 @@ pre code {
   .btn-secondary {
     width: 100%;
     justify-content: center;
+  }
+
+  /* Further diagram reduction */
+  .diagram {
+    padding: 12px;
+  }
+
+  .browser-chrome {
+    padding: 4px;
+  }
+
+  .browser-tabs {
+    flex-wrap: wrap;
+  }
+
+  .browser-tab {
+    font-size: 9px;
+    padding: 4px 6px;
+  }
+
+  .browser-address {
+    font-size: 10px;
+  }
+
+  /* Extension items stack icon + text */
+  .extension-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .extension-item .info {
+    margin-left: 0;
+  }
+
+  .extension-item .name {
+    font-size: 12px;
+  }
+
+  .extension-item .description {
+    font-size: 9px;
+  }
+
+  /* Step content text scaling */
+  .step-content h3 {
+    font-size: 20px;
+  }
+
+  .step-content p {
+    font-size: 14px;
+  }
+
+  pre code {
+    font-size: 12px;
+  }
+
+  /* Thanks modal mobile scaling */
+  .thanks-content {
+    padding: 32px 24px;
+    border-radius: 12px;
+  }
+
+  .thanks-content h2 {
+    font-size: 24px;
+  }
+
+  .thanks-content p {
+    font-size: 14px;
+  }
+
+  /* CTA Grid mobile: Stack all buttons */
+  .cta-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .cta-grid .firefox-badge {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .cta-grid .firefox-badge img {
+    width: 100%;
+    height: auto;
+    max-height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  .cta-grid .btn-secondary {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cta-grid .btn-notify {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cta-grid .notify-form,
+  .cta-grid .notify-success {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  /* Notify form mobile: Stack vertically */
+  .notify-form {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .notify-form input[type="email"] {
+    width: 100%;
+  }
+
+  .btn-notify-submit {
+    width: 100%;
   }
 }
 

@@ -10,3 +10,11 @@ FRONTEND_URL = "https://boot.industries"
 # Secrets (set via: wrangler secret put STRIPE_SECRET_KEY)
 # STRIPE_SECRET_KEY (required) - Stripe API secret key (sk_...)
 # STRIPE_WEBHOOK_SECRET (optional, for future webhook handling)
+
+# D1 Database for email signups
+# To setup: wrangler d1 create claudezilla-emails
+# Then copy the database_id from output and paste below
+[[d1_databases]]
+binding = "DB"
+database_name = "claudezilla-emails"
+database_id = "<REPLACE_WITH_DATABASE_ID_FROM_WRANGLER_CREATE>"
