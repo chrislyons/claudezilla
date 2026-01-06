@@ -1,12 +1,13 @@
 # Claudezilla - Claude Code Firefox Extension
 
-**Version:** 0.4.5
+**Version:** 0.5.0
 
 ## Overview
 
 Firefox extension providing browser automation for Claude Code CLI. A Google-free alternative to the official Chrome extension.
 
-**Key Features (v0.4.x):**
+**Key Features (v0.5.0):**
+- **NEW: Concentration loops** - Persistent iterative development like Ralph Wiggum
 - Single window with max 10 tabs shared across Claude agents
 - Multi-agent safety (tab ownership, screenshot mutex, 128-bit agent IDs)
 - Security hardening (socket permissions, URL validation, selector validation)
@@ -34,6 +35,12 @@ claudezilla/
 ├── host/               # Native messaging host
 │   ├── index.js        # Main entry point
 │   └── protocol.js     # Message serialization
+├── mcp/                # MCP server
+│   └── server.js       # Tool definitions and command routing
+├── plugin/             # Claude Code plugin (concentration loops)
+│   ├── .claude-plugin/ # Plugin metadata
+│   ├── hooks/          # Stop hook for loop enforcement
+│   └── README.md
 ├── website/            # Marketing website (Cloudflare Pages)
 │   ├── index.html      # Home page
 │   ├── extension.html  # Setup/installation guide
@@ -127,6 +134,63 @@ claudezilla@boot.industries
 |---------|-------------|
 | getConsoleLogs | Console output by level |
 | getNetworkRequests | XHR/fetch with timing |
+
+### Concentration Loop (v0.5.0)
+| Command | Description |
+|---------|-------------|
+| startLoop | Start iterative loop with prompt and max iterations |
+| stopLoop | Stop the active loop |
+| getLoopState | Get current loop state (iteration, prompt, etc.) |
+
+## Concentration Loops (v0.5.0)
+
+Enables Ralph Wiggum-style persistent iterative development. Claude works on a prompt repeatedly until completion.
+
+**Architecture:**
+```
+Claude Code Session
+    ↓
+Plugin Stop Hook (claudezilla/plugin/)
+    ↓ (Unix socket query)
+Claudezilla Host (loop state)
+    ↓
+Firefox Extension (visual control)
+```
+
+**Usage:**
+```javascript
+// Start a concentration loop
+firefox_start_loop({
+  prompt: "Build a REST API for todos",
+  maxIterations: 20,
+  completionPromise: "DONE"  // Optional: end when <promise>DONE</promise> detected
+})
+
+// Check status
+firefox_loop_status()
+// Returns: { active: true, iteration: 5, maxIterations: 20, ... }
+
+// Stop manually
+firefox_stop_loop()
+```
+
+**How it works:**
+1. Claude calls `firefox_start_loop` with a task prompt
+2. When Claude tries to exit, the plugin's Stop hook intercepts
+3. Hook queries Claudezilla host for loop state
+4. If active, hook blocks exit and re-injects the prompt
+5. Loop continues until max iterations or manual stop
+
+**Plugin installation:**
+```bash
+# From claudezilla directory
+ln -s "$(pwd)/plugin" ~/.claude/plugins/claudezilla-loop
+```
+
+**Browser UI:**
+- Loop status shown in extension popup
+- Iteration counter and prompt preview
+- Stop button for manual cancellation
 
 ## Payload Optimization (v0.4.3)
 

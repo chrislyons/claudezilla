@@ -563,6 +563,46 @@ const TOOLS = [
       },
     },
   },
+
+  // ===== LOOP/CONCENTRATION FEATURE =====
+  {
+    name: 'firefox_start_loop',
+    description: 'Start a concentration loop. Claude will automatically continue working on the prompt until max iterations reached or completion promise detected. Uses Stop hook enforcement - Claude cannot skip the loop.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: {
+          type: 'string',
+          description: 'The task prompt to work on iteratively',
+        },
+        maxIterations: {
+          type: 'number',
+          description: 'Maximum iterations before stopping (default: 0 = unlimited, use with caution)',
+        },
+        completionPromise: {
+          type: 'string',
+          description: 'Text to signal completion. When Claude outputs <promise>THIS_TEXT</promise>, the loop ends.',
+        },
+      },
+      required: ['prompt'],
+    },
+  },
+  {
+    name: 'firefox_stop_loop',
+    description: 'Stop the active concentration loop. The current iteration will complete, then Claude will be allowed to exit.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'firefox_loop_status',
+    description: 'Get the current concentration loop status. Returns: active, iteration, maxIterations, prompt, completionPromise, startedAt.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 // Map MCP tool names to Claudezilla commands
@@ -591,13 +631,17 @@ const TOOL_TO_COMMAND = {
   firefox_get_accessibility_snapshot: 'getAccessibilitySnapshot',
   // Keyboard input
   firefox_press_key: 'pressKey',
+  // Loop/concentration
+  firefox_start_loop: 'startLoop',
+  firefox_stop_loop: 'stopLoop',
+  firefox_loop_status: 'getLoopState',
 };
 
 // Create MCP server
 const server = new Server(
   {
     name: 'claudezilla',
-    version: '0.4.5',
+    version: '0.5.0',
   },
   {
     capabilities: {

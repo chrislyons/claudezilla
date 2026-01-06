@@ -1009,6 +1009,19 @@ browser.runtime.onMessage.addListener((message, sender) => {
           result = await sendToHost('version');
           break;
 
+        // Loop/concentration commands - forward to native host
+        case 'getLoopState':
+          result = await sendToHost('getLoopState');
+          break;
+
+        case 'stopLoop':
+          result = await sendToHost('stopLoop');
+          break;
+
+        case 'startLoop':
+          result = await sendToHost('startLoop', params);
+          break;
+
         case 'openPopup':
           // Open extension popup when watermark is clicked
           // Firefox 57+ supports browserAction.openPopup()
