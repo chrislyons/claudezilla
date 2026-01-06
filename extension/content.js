@@ -16,6 +16,9 @@ let settings = {
 
 // Visual elements
 let watermarkElement = null;
+let watermarkShadow = null;  // Shadow DOM root for watermark
+let electronsElement = null;  // Reference inside shadow DOM
+let armsElement = null;       // Reference inside shadow DOM
 let focusglowElement = null;
 let speechBubbleElement = null;
 let focusglowTimeout = null;
@@ -151,11 +154,52 @@ const CLAUDE_LOGO_SVG = `
 function initWatermark() {
   if (watermarkElement) return;
 
-  // Inject watermark glow throb animation
-  if (!document.getElementById('claudezilla-watermark-styles')) {
-    const style = document.createElement('style');
-    style.id = 'claudezilla-watermark-styles';
-    style.textContent = `
+  // Shadow DOM provides complete CSS isolation - no external styles needed
+  watermarkElement = document.createElement('div');
+  watermarkElement.id = 'claudezilla-watermark';
+
+  // Use Shadow DOM to completely isolate from page CSS
+  // Store reference since we need to access elements inside for triggerElectrons
+  watermarkShadow = watermarkElement.attachShadow({ mode: 'closed' });
+
+  // Container styling (on host element, outside shadow)
+  watermarkElement.style.cssText = `
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    width: 100px;
+    height: 100px;
+    z-index: 2147483647;
+    pointer-events: auto;
+    cursor: pointer;
+  `;
+
+  // All styles go inside shadow DOM for isolation
+  watermarkShadow.innerHTML = `
+    <style>
+      :host {
+        display: block;
+        position: relative;
+      }
+      .watermark-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: rgba(20, 18, 18, 0.94);
+        border-radius: 14px;
+        padding: 12px;
+        opacity: 0.95;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: visible;
+        animation: claudezilla-glow-throb 4s ease-in-out infinite;
+        transition: opacity 0.3s ease, transform 0.15s ease;
+        box-sizing: border-box;
+      }
+      .watermark-inner:hover {
+        transform: scale(1.05);
+      }
       @keyframes claudezilla-glow-throb {
         0%, 100% {
           box-shadow:
@@ -174,7 +218,7 @@ function initWatermark() {
             inset 0 0 0 1px rgba(209, 77, 50, 0.4);
         }
       }
-      /* Speech bubble - tiny, classic white comic style */
+      /* Speech bubble styles */
       @keyframes claudezilla-bubble-pop {
         0% { transform: scale(0); opacity: 0; }
         70% { transform: scale(1.1); }
@@ -184,10 +228,14 @@ function initWatermark() {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-1px); }
       }
-      #claudezilla-speech-bubble {
+      /* LOCKED COORDINATES - calibrated 2026-01-06, do not change */
+      .speech-bubble {
         position: absolute !important;
-        top: 48px !important;
-        right: 45px !important;
+        top: 36px !important;
+        right: 32px !important;
+        left: auto !important;
+        bottom: auto !important;
+        margin: 0 !important;
         width: 8px;
         height: 8px;
         background: #f5f5f4;
@@ -201,20 +249,19 @@ function initWatermark() {
         pointer-events: none;
         box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       }
-      #claudezilla-speech-bubble.singing {
+      .speech-bubble.singing {
         opacity: 1;
         transform: scale(1);
         animation: claudezilla-bubble-pop 0.25s ease-out forwards;
       }
-      #claudezilla-speech-bubble .note {
+      .speech-bubble .note {
         font-size: 7px;
         color: #1a1a1a;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
         line-height: 1;
         animation: claudezilla-note-bob 0.5s ease-in-out infinite;
       }
-      /* Tiny bubble tail pointing diagonally to monster's mouth */
-      #claudezilla-speech-bubble::after {
+      .speech-bubble::after {
         content: '';
         position: absolute;
         bottom: -2px;
@@ -225,32 +272,13 @@ function initWatermark() {
         border-top-color: #f5f5f4;
         transform: rotate(-45deg);
       }
-    `;
-    document.head.appendChild(style);
-  }
-
-  watermarkElement = document.createElement('div');
-  watermarkElement.id = 'claudezilla-watermark';
-  watermarkElement.innerHTML = CLAUDE_LOGO_SVG;
-  watermarkElement.style.cssText = `
-    position: fixed;
-    bottom: 16px;
-    left: 16px;
-    width: 100px;
-    height: 100px;
-    background: rgba(20, 18, 18, 0.94);
-    border-radius: 14px;
-    padding: 12px;
-    z-index: 2147483647;
-    opacity: 0.95;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-    animation: claudezilla-glow-throb 4s ease-in-out infinite;
-    pointer-events: auto;
-    cursor: pointer;
-    transition: opacity 0.3s ease, transform 0.15s ease;
+    </style>
+    <div class="watermark-inner">
+      ${CLAUDE_LOGO_SVG}
+      <div class="speech-bubble">
+        <span class="note">♪</span>
+      </div>
+    </div>
   `;
 
   // Click to open extension popup
@@ -258,22 +286,12 @@ function initWatermark() {
     browser.runtime.sendMessage({ action: 'openPopup' });
   });
 
-  // Hover effect
-  watermarkElement.addEventListener('mouseenter', () => {
-    watermarkElement.style.transform = 'scale(1.05)';
-  });
-  watermarkElement.addEventListener('mouseleave', () => {
-    watermarkElement.style.transform = 'scale(1)';
-  });
-
   document.body.appendChild(watermarkElement);
 
-  // Create speech bubble (singing note - appears when working)
-  // Append inside watermark for relative positioning
-  speechBubbleElement = document.createElement('div');
-  speechBubbleElement.id = 'claudezilla-speech-bubble';
-  speechBubbleElement.innerHTML = '<span class="note">♪</span>';
-  watermarkElement.appendChild(speechBubbleElement);
+  // Store references to elements inside shadow DOM for triggerElectrons
+  speechBubbleElement = watermarkShadow.querySelector('.speech-bubble');
+  electronsElement = watermarkShadow.querySelector('#claudezilla-electrons');
+  armsElement = watermarkShadow.querySelector('#claudezilla-arms');
 }
 
 /**
@@ -433,21 +451,18 @@ function moveFocusTo(selector) {
  */
 function triggerElectrons() {
   if (!settings.showWatermark || !watermarkElement) return;
-
-  const electrons = watermarkElement.querySelector('#claudezilla-electrons');
-  const arms = watermarkElement.querySelector('#claudezilla-arms');
-  if (!electrons) return;
+  if (!electronsElement) return;
 
   // Show electrons, arms, and speech bubble (Claudezilla sings while working!)
-  electrons.style.opacity = '1';
-  if (arms) arms.style.opacity = '1';
+  electronsElement.style.opacity = '1';
+  if (armsElement) armsElement.style.opacity = '1';
   if (speechBubbleElement) speechBubbleElement.classList.add('singing');
 
   // Hide after 5s idle (with gradual 1.5s fade)
   clearTimeout(electronTimeout);
   electronTimeout = setTimeout(() => {
-    electrons.style.opacity = '0';
-    if (arms) arms.style.opacity = '0';
+    electronsElement.style.opacity = '0';
+    if (armsElement) armsElement.style.opacity = '0';
     if (speechBubbleElement) speechBubbleElement.classList.remove('singing');
   }, 5000);
 }
