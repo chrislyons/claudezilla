@@ -32,3 +32,11 @@ install/claudezilla.json
 # Lock files (keep root package-lock if added)
 mcp/package-lock.json
 host/package-lock.json
+
+# Private documentation (PREFIX docs for local use only)
+docs/clz/
+docs/tmp/
+
+# Setup guides with deployment details
+STRIPE_SETUP.md
+IMPLEMENTATION_SUMMARY.md
