@@ -400,6 +400,30 @@ label {
   opacity: 1;
 }
 
+.crypto-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.crypto-btn:hover {
+  box-shadow: 0 0 20px rgba(153, 69, 255, 0.4);
+  transform: translateY(-1px);
+}
+
 .crypto-note {
   font-size: 12px;
   color: var(--text-secondary);
