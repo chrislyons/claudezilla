@@ -25,7 +25,9 @@ cd claudezilla
 ./install/install-linux.sh
 ```
 
-### 2. Load the extension
+### 2. Install the extension
+
+Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/claudezilla/), or load manually:
 
 1. Open Firefox → `about:debugging`
 2. Click **"This Firefox"** → **"Load Temporary Add-on"**

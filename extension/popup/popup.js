@@ -8,7 +8,6 @@ const statusIndicator = document.getElementById('statusIndicator');
 const statusText = document.getElementById('statusText');
 const infoDiv = document.getElementById('info');
 const errorDiv = document.getElementById('error');
-const pingBtn = document.getElementById('pingBtn');
 const showWatermarkCheckbox = document.getElementById('showWatermark');
 const showFocusglowCheckbox = document.getElementById('showFocusglow');
 const compressImagesCheckbox = document.getElementById('compressImages');
@@ -232,9 +231,6 @@ async function init() {
 
   // Check loop status
   await checkLoopStatus();
-
-  // Manual test button
-  pingBtn.addEventListener('click', testConnection);
 
   // Stop loop button
   if (stopLoopBtn) {

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy - Claudezilla</title>
+  <meta name="description" content="Privacy policy for the Claudezilla Firefox extension.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Privacy Policy - Claudezilla">
+  <meta property="og:description" content="Privacy policy for the Claudezilla Firefox extension">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://claudezilla.com/privacy.html">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --terracotta: #D14D32;
+      --terracotta-dark: #b83e28;
+      --terracotta-glow: rgba(209, 77, 50, 0.4);
+      --bg-dark: #0a0a0a;
+      --bg-card: #1a1a1a;
+      --text-primary: #ffffff;
+      --text-secondary: #aaaaaa;
+      --grid-color: rgba(209, 77, 50, 0.08);
+    }
+
+    body {
+      font-family: 'Space Mono', monospace;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      position: relative;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+      animation: gridPulse 20s ease-in-out infinite;
+    }
+
+    @keyframes gridPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+    }
+
+    .main-nav {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .nav-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--terracotta);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s;
+      font-weight: 700;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--terracotta);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 32px 64px;
+    }
+
+    .content-card {
+      background: var(--bg-card);
+      border: 2px solid rgba(209, 77, 50, 0.3);
+      border-radius: 12px;
+      padding: 48px;
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: var(--terracotta);
+    }
+
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--terracotta);
+      margin-top: 32px;
+      margin-bottom: 16px;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    ul {
+      margin-bottom: 16px;
+      padding-left: 24px;
+      color: var(--text-secondary);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    a {
+      color: var(--terracotta);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .back-link a {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .back-link a:hover {
+      color: var(--terracotta);
+      text-decoration: none;
+    }
+
+    @media (max-width: 900px) {
+      .main-nav {
+        flex-direction: column;
+        gap: 16px;
+      }
+      .nav-links {
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .content-card {
+        padding: 32px 24px;
+      }
+      h1 {
+        font-size: 28px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="main-nav">
+    <a href="/" class="nav-logo">Claudezilla</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/extension.html">Setup</a>
+      <a href="/docs.html">Docs</a>
+      <a href="/support.html">Support</a>
+      <a href="https://github.com/boot-industries/claudezilla" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="content-card">
+      <h1>Privacy Policy</h1>
+      <p class="last-updated">Last updated: January 6, 2025</p>
+
+      <h2>Overview</h2>
+      <p>Claudezilla is a Firefox extension that enables browser automation for Claude Code CLI. We are committed to protecting your privacy. This policy explains what data the extension accesses and how it is handled.</p>
+
+      <h2>Data Collection</h2>
+      <p><strong>Claudezilla does not collect, store, or transmit any personal data.</strong></p>
+      <p>The extension operates entirely locally on your machine. All communication occurs through a Unix socket between the extension and the native messaging host - no data is sent to external servers.</p>
+
+      <h2>What the Extension Accesses</h2>
+      <p>When you use Claudezilla with Claude Code, the extension may access:</p>
+      <ul>
+        <li><strong>Page content:</strong> Text, DOM elements, and page structure - only when explicitly requested by Claude</li>
+        <li><strong>Screenshots:</strong> Captured and held in memory temporarily, never persisted to disk or transmitted externally</li>
+        <li><strong>Network requests:</strong> Monitored for page readiness detection only; request bodies are never captured</li>
+        <li><strong>Console logs:</strong> Available on-demand for debugging; opt-in and never transmitted</li>
+      </ul>
+      <p>All accessed data remains on your local machine and is used solely to fulfill automation commands from Claude Code.</p>
+
+      <h2>Permissions Explained</h2>
+      <ul>
+        <li><strong>nativeMessaging:</strong> Communicate with Claude Code via the native host</li>
+        <li><strong>tabs:</strong> Create and manage browser tabs for automation</li>
+        <li><strong>activeTab:</strong> Access the current tab when automation is requested</li>
+        <li><strong>&lt;all_urls&gt;:</strong> Enable automation on any URL you navigate to</li>
+        <li><strong>webRequest:</strong> Detect when pages finish loading</li>
+        <li><strong>storage:</strong> Save your preferences (like compression settings)</li>
+      </ul>
+
+      <h2>Third-Party Services</h2>
+      <p>The extension itself uses no third-party services. However:</p>
+      <ul>
+        <li><strong>Stripe:</strong> If you choose to make a donation via our <a href="/support.html">support page</a>, payment processing is handled by Stripe. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</li>
+        <li><strong>Helio:</strong> Cryptocurrency donations are processed by Helio. See <a href="https://docs.hel.io/privacy" target="_blank" rel="noopener">Helio's Privacy Policy</a>.</li>
+      </ul>
+
+      <h2>Analytics</h2>
+      <p>Claudezilla does not include any analytics, telemetry, or tracking. We do not know how many people use the extension or how they use it.</p>
+
+      <h2>Open Source</h2>
+      <p>Claudezilla is open source under the MIT license. You can review the complete source code at <a href="https://github.com/boot-industries/claudezilla" target="_blank" rel="noopener">github.com/boot-industries/claudezilla</a>.</p>
+
+      <h2>Changes to This Policy</h2>
+      <p>If we make changes to this privacy policy, we will update the "Last updated" date above. Significant changes will be noted in the extension's changelog.</p>
+
+      <h2>Contact</h2>
+      <p>For privacy-related questions, contact: <a href="mailto:support@boot.industries">support@boot.industries</a></p>
+    </div>
+
+    <div class="back-link">
+      <a href="/">← Back to Home</a>
+    </div>
+  </div>
+</body>
+</html>

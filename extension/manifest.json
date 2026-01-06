@@ -8,7 +8,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "claudezilla@boot.industries",
-      "strict_min_version": "91.0"
+      "strict_min_version": "91.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
 
@@ -19,8 +22,7 @@
     "<all_urls>",
     "webRequest",
     "webRequestBlocking",
-    "storage",
-    "tabGroups"
+    "storage"
   ],
 
   "background": {
