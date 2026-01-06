@@ -784,8 +784,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         ],
       };
     } else {
+      // Format structured errors (like MUTEX_BUSY) with full details
+      let errorText = `Error: ${response.error || 'Unknown error'}`;
+      if (response.details?.code === 'MUTEX_BUSY') {
+        errorText = `MUTEX_BUSY: Screenshot mutex held by another agent.\n` +
+          `  Holder: ${response.details.holder}\n` +
+          `  Held for: ${response.details.heldForMs}ms\n` +
+          `  Tab pool: ${response.details.tabPool || 'unknown'}\n` +
+          `  Retry after: ${response.details.retryAfterMs}ms\n` +
+          `  Hint: ${response.details.hint}`;
+      }
       return {
-        content: [{ type: 'text', text: `Error: ${response.error || 'Unknown error'}` }],
+        content: [{ type: 'text', text: errorText }],
         isError: true,
       };
     }

@@ -30,6 +30,8 @@ let activeTabId = null; // Currently active tab in the Claudezilla window
 // Screenshot mutex - serialize all screenshot requests to prevent collisions
 // (captureVisibleTab only works on visible tab, so we must switch tabs sequentially)
 let screenshotLock = Promise.resolve();
+let screenshotMutexHolder = null;    // { agentId, acquiredAt, operation }
+const MUTEX_BUSY_THRESHOLD_MS = 5000; // Return MUTEX_BUSY if held longer than this
 
 // Tab group colors (Firefox 138+)
 const SESSION_COLORS = ['blue', 'red', 'yellow', 'green', 'pink', 'cyan', 'orange', 'grey'];
@@ -948,7 +950,28 @@ async function handleCliCommand(message) {
         // Generate unique request ID for this screenshot to track through mutex
         const screenshotRequestId = `ss_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
+        // MUTEX_BUSY check: If another agent has held the mutex too long, return busy
+        if (screenshotMutexHolder && screenshotMutexHolder.agentId !== agentId) {
+          const heldFor = Date.now() - screenshotMutexHolder.acquiredAt;
+          if (heldFor > MUTEX_BUSY_THRESHOLD_MS) {
+            const tabCount = claudezillaWindow?.tabs?.length || 0;
+            throw {
+              code: 'MUTEX_BUSY',
+              message: `Screenshot mutex held by another agent`,
+              holder: screenshotMutexHolder.agentId.slice(0, 20) + '...', // Truncate for privacy
+              heldForMs: heldFor,
+              retryAfterMs: 2000,
+              tabPool: `${tabCount}/${MAX_TABS}`,
+              hint: 'Another agent is capturing. Use getPageState (no mutex) or retry after delay.'
+            };
+          }
+        }
+
         const screenshotPromise = screenshotLock.then(async () => {
+          // Acquire mutex - track holder
+          screenshotMutexHolder = { agentId, acquiredAt: Date.now(), requestId: screenshotRequestId };
+
+          try {
           const session = await getSession(windowId);
           let screenshotReadiness = null;
 
@@ -1022,6 +1045,10 @@ async function handleCliCommand(message) {
             };
           } else {
             return { ...baseResponse, dataUrl: rawDataUrl, scale: 1 };
+          }
+          } finally {
+            // Release mutex
+            screenshotMutexHolder = null;
           }
         });
 
@@ -1158,7 +1185,12 @@ async function handleCliCommand(message) {
     port.postMessage({ id, success: true, result });
   } catch (error) {
     console.error('[claudezilla] CLI command error:', error);
-    port.postMessage({ id, success: false, error: error.message });
+    // Structured errors (like MUTEX_BUSY) pass through with full details
+    if (error && error.code) {
+      port.postMessage({ id, success: false, error: error.message, details: error });
+    } else {
+      port.postMessage({ id, success: false, error: error.message || String(error) });
+    }
   }
 }
 
