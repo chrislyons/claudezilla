@@ -44,6 +44,31 @@ body {
   position: relative;
 }
 
+/* Close Button */
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 2px solid var(--text-secondary);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
 h1 {
   font-family: 'Orbitron', sans-serif;
   font-size: 36px;

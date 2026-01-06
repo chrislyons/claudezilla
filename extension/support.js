@@ -4,6 +4,11 @@
  * Handles amount selection, frequency toggling, and Stripe checkout creation.
  */
 
+// Close button - close the tab
+document.getElementById('closeBtn').addEventListener('click', () => {
+  window.close();
+});
+
 // Cloudflare Worker endpoint for Stripe checkout
 const WORKER_URL = 'https://api.claudezilla.com';
 
