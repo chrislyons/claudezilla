@@ -1,0 +1,57 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Spine glow gradient -->
+    <linearGradient id="iconSpineGlow" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#D14D32" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FCD34D" stop-opacity="0.4"/>
+    </linearGradient>
+    <!-- Soft dissolve glow gradients -->
+    <radialGradient id="iconGlowOuter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D14D32" stop-opacity="0.75"/>
+      <stop offset="40%" stop-color="#D14D32" stop-opacity="0.55"/>
+      <stop offset="70%" stop-color="#D14D32" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#D14D32" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="iconGlowInner" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E05A38" stop-opacity="0.65"/>
+      <stop offset="50%" stop-color="#E05A38" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#E05A38" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background - solid dark rounded square -->
+  <rect x="0" y="0" width="128" height="128" rx="20" ry="20" fill="#141212"/>
+
+  <!-- Master group centered and scaled (1.8 = 20% larger than watermark's 1.5) -->
+  <g transform="translate(64, 64) scale(1.8) translate(-32, -32)">
+
+    <!-- LAYER 1: Tesseract frame -->
+    <path d="M32 8 L54 18 L54 46 L32 56 L10 46 L10 18 Z"
+          stroke="#D14D32" stroke-width="2.5" fill="none" stroke-linejoin="round" opacity="0.9"/>
+    <path d="M32 8 L32 56 M10 18 L54 46 M54 18 L10 46"
+          stroke="#D14D32" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- LAYER 2: Glow (behind character) -->
+    <g transform="translate(32, 32) scale(1.2)">
+      <ellipse cx="0" cy="0" rx="14" ry="16" fill="url(#iconGlowOuter)"/>
+      <ellipse cx="0" cy="0" rx="9" ry="11" fill="url(#iconGlowInner)"/>
+    </g>
+
+    <!-- LAYER 3: Character (spines + body + eye) -->
+    <g transform="translate(32, 32) scale(1.2)">
+      <!-- Spine glows (static opacity) -->
+      <path d="M-0.8 -6 L0 -10 L0.8 -6" fill="url(#iconSpineGlow)" opacity="0.7"/>
+      <path d="M1.5 -4 L3.5 -8 L3.5 -3.5" fill="url(#iconSpineGlow)" opacity="0.7"/>
+      <path d="M-1.5 -4 L-3.5 -8 L-3.5 -3.5" fill="url(#iconSpineGlow)" opacity="0.7"/>
+      <!-- Spine dark cones -->
+      <path d="M-0.7 -6 L0 -10 L0.7 -6 Z" fill="#1a1a1a"/>
+      <path d="M1.8 -4 L3.5 -8 L3.2 -3.5 Z" fill="#1a1a1a"/>
+      <path d="M-1.8 -4 L-3.5 -8 L-3.2 -3.5 Z" fill="#1a1a1a"/>
+      <!-- Body -->
+      <path d="M-4 6 L-4 0 L-5 -2 L-5 -4 L-4 -5 L-2 -5 L0 -7 L2 -5 L4 -5 L5 -4 L5 -2 L4 0 L4 6 L2 6 L2 2 L1 3 L-1 3 L-2 2 L-2 6 Z" fill="#1a1a1a"/>
+      <!-- Eye -->
+      <circle cx="1" cy="-3" r="1.5" fill="#FCD34D"/>
+    </g>
+
+  </g>
+</svg>

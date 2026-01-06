@@ -37,12 +37,22 @@
   ],
 
   "browser_action": {
-    "default_icon": "icons/claudezilla-48.svg",
+    "default_icon": {
+      "16": "icons/claudezilla-16.png",
+      "32": "icons/claudezilla-32.png",
+      "48": "icons/claudezilla-48.png",
+      "64": "icons/claudezilla-64.png"
+    },
     "default_title": "Claudezilla",
     "default_popup": "popup/popup.html"
   },
 
   "icons": {
-    "48": "icons/claudezilla-48.svg"
+    "16": "icons/claudezilla-16.png",
+    "32": "icons/claudezilla-32.png",
+    "48": "icons/claudezilla-48.png",
+    "64": "icons/claudezilla-64.png",
+    "96": "icons/claudezilla-96.png",
+    "128": "icons/claudezilla-128.png"
   }
 }
