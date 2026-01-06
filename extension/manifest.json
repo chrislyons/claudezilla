@@ -37,12 +37,7 @@
   ],
 
   "browser_action": {
-    "default_icon": {
-      "16": "icons/claudezilla-16.png",
-      "32": "icons/claudezilla-32.png",
-      "48": "icons/claudezilla-48.png",
-      "64": "icons/claudezilla-64.png"
-    },
+    "default_icon": "icons/claudezilla-48.svg",
     "default_title": "Claudezilla",
     "default_popup": "popup/popup.html"
   },
