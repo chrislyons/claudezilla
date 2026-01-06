@@ -34,10 +34,23 @@ claudezilla/
 ├── host/               # Native messaging host
 │   ├── index.js        # Main entry point
 │   └── protocol.js     # Message serialization
+├── website/            # Marketing website (Cloudflare Pages)
+│   ├── index.html      # Home page
+│   ├── extension.html  # Setup/installation guide
+│   ├── docs.html       # Documentation
+│   ├── support.html    # Support/donations page
+│   └── assets/         # CSS, JS, images
+├── worker/             # Cloudflare Worker (Stripe backend)
+│   ├── wrangler.toml   # Worker config
+│   └── src/index.ts    # Checkout endpoint
 └── install/            # Installation scripts
     ├── install-macos.sh
     └── install-linux.sh
 ```
+
+## Deployment Notes
+
+⚠️ **Cloudflare Pages deployment:** Deploy the `website/` directory, NOT `extension/`. The extension files are bundled into the XPI via manifest.json; the website/ directory contains the marketing landing page for claudezilla.com.
 
 ## Development
 
