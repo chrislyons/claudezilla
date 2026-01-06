@@ -230,7 +230,7 @@ See `STRIPE_SETUP.md` for complete deployment guide.
 2. 🔄 **Deploy Worker** — Run `cd worker && wrangler deploy`
 3. 🔄 **Update support.js** — Replace WORKER_URL with deployed endpoint
 4. 🔄 **Test flow** — Verify complete payment flow with Stripe test card
-5. 🔄 **Update version** — Bump extension to v0.5.0
+5. 🔄 **Update version** — Bump extension to v0.4.7
 6. 🔄 **Commit** — Create PR with all changes
 7. 🔄 **Merge** — Merge to main branch
 

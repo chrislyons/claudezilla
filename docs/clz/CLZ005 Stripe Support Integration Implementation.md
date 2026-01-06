@@ -3,7 +3,7 @@
 **Date:** 2026-01-05
 **Status:** Complete & Ready for Deployment
 **Author:** Claude Code
-**Version:** 0.5.0 (pending)
+**Version:** 0.4.6
 
 ---
 
@@ -211,7 +211,7 @@ See `STRIPE_SETUP.md` for complete details.
 - [ ] Update FRONTEND_URL in `worker/wrangler.toml`
 - [ ] Test with Stripe test card: `4242 4242 4242 4242`
 - [ ] Verify thank you modal appears post-payment
-- [ ] Bump version to 0.5.0
+- [x] Bump version to 0.4.6
 - [ ] Create PR and code review
 - [ ] Merge to main
 - [ ] Update extension manifest for new files

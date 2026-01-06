@@ -1,12 +1,12 @@
 # Claudezilla - Claude Code Firefox Extension
 
-**Version:** 0.5.0
+**Version:** 0.4.8
 
 ## Overview
 
 Firefox extension providing browser automation for Claude Code CLI. A Google-free alternative to the official Chrome extension.
 
-**Key Features (v0.5.0):**
+**Key Features (v0.4.8):**
 - **NEW: Concentration loops** - Persistent iterative development like Ralph Wiggum
 - Single window with max 10 tabs shared across Claude agents
 - Multi-agent safety (tab ownership, screenshot mutex, 128-bit agent IDs)
@@ -135,14 +135,14 @@ claudezilla@boot.industries
 | getConsoleLogs | Console output by level |
 | getNetworkRequests | XHR/fetch with timing |
 
-### Concentration Loop (v0.5.0)
+### Concentration Loop (v0.4.7)
 | Command | Description |
 |---------|-------------|
 | startLoop | Start iterative loop with prompt and max iterations |
 | stopLoop | Stop the active loop |
 | getLoopState | Get current loop state (iteration, prompt, etc.) |
 
-## Concentration Loops (v0.5.0)
+## Concentration Loops (v0.4.7)
 
 Enables Ralph Wiggum-style persistent iterative development. Claude works on a prompt repeatedly until completion.
 
@@ -192,7 +192,7 @@ ln -s "$(pwd)/plugin" ~/.claude/plugins/claudezilla-loop
 - Iteration counter and prompt preview
 - Stop button for manual cancellation
 
-## Screenshot Timing (v0.5.1)
+## Screenshot Timing (v0.4.8)
 
 Dynamic page readiness detection replaces hardcoded delays. Screenshots now wait for actual signals from the page before capture.
 

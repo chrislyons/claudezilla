@@ -227,7 +227,7 @@ function handleExtensionMessage(message) {
       id,
       success: true,
       result: {
-        host: '0.5.0',
+        host: '0.4.8',
         node: process.version,
         platform: process.platform,
         features: ['security-hardened', 'concentration-loop'],

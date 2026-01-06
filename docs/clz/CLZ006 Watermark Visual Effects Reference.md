@@ -7,7 +7,7 @@
 
 The Claudezilla watermark badge appears in the lower-left corner of pages controlled by the extension. It displays an animated monster character with orbiting electrons that activate when Claude is working.
 
-## Shadow DOM Isolation (v0.5.1)
+## Shadow DOM Isolation (v0.4.8)
 
 The watermark uses **Shadow DOM** to prevent page CSS from corrupting SVG transforms and element positioning.
 

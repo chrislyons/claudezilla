@@ -161,5 +161,5 @@ This would allow tracking payment confirmations server-side instead of relying o
 1. Deploy the Worker with your Stripe keys
 2. Update `support.js` with the Worker URL
 3. Test the complete flow with Stripe's test card
-4. Update extension version to 0.5.0
+4. Update extension version to 0.4.6
 5. Commit and merge to main branch

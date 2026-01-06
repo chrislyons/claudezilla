@@ -1,7 +1,67 @@
 # CLZ002 Changelog
 
 **Project:** Claudezilla
-**Current Version:** 0.4.5
+**Current Version:** 0.4.8
+
+## v0.4.8 (2026-01-06)
+
+**Screenshot timing + crypto payments + CSS isolation.**
+
+### Features
+
+- **Dynamic screenshot readiness** - Replaces hardcoded delays with actual page signals
+  - Network idle detection (waits for XHR/fetch/scripts to complete)
+  - Visual idle (optional wait for images/fonts, 3s max)
+  - Render settlement (double RAF + requestIdleCallback)
+  - Timeline data in response shows wait breakdown
+  - `skipReadiness` param for instant capture when page is known-ready
+- **Helio crypto payments** - Solana/USDC option on support page
+
+### Bug Fixes
+
+- **Shadow DOM isolation** - Watermark CSS no longer corrupts page styles
+- **Support page worker URL** - Fixed endpoint for website deployment
+
+---
+
+## v0.4.7 (2026-01-05)
+
+**Concentration loops.**
+
+### Features
+
+- **Ralph Wiggum-style loops** - Persistent iterative development until completion
+  - `firefox_start_loop` - Start with prompt, max iterations, optional completion promise
+  - `firefox_stop_loop` - Manual cancellation
+  - `firefox_loop_status` - Check iteration count and state
+- **Plugin system** - Stop hook enforcement via Unix socket
+- **Browser UI** - Loop status in popup with iteration counter and stop button
+
+### Bug Fixes
+
+- **SVG transform fixes** - Speech bubble positioning after transform changes
+- **Breathing animation removed** - Electrons/arms/bubble provide sufficient feedback
+
+---
+
+## v0.4.6 (2026-01-05)
+
+**Website launch + support integration.**
+
+### Features
+
+- **claudezilla.com** - Marketing website on Cloudflare Pages
+  - Home, extension setup, docs, and support pages
+  - Retro-futuristic design matching extension aesthetic
+- **Stripe integration** - Support/donation payments via Cloudflare Worker
+- **Thank you modal** - Post-payment confirmation with font preloading
+
+### Infrastructure
+
+- **Cloudflare Pages** - Website deployed from `website/` directory
+- **Cloudflare Worker** - Stripe checkout endpoint at `worker/`
+
+---
 
 ## v0.4.5 (2026-01-05)
 

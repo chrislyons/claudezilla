@@ -77,4 +77,4 @@ Loop State: { active, iteration, prompt, ... }
 
 ## Version
 
-0.1.0 - Initial release with Claudezilla 0.5.0
+0.1.0 - Initial release with Claudezilla 0.4.7
