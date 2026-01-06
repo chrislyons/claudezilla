@@ -214,9 +214,9 @@ function initWatermark() {
         animation: claudezilla-bubble-pop 0.25s ease-out forwards;
       }
       #claudezilla-speech-bubble .note {
-        font-size: 6px;
+        font-size: 7px;
         color: #1a1a1a;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
         line-height: 1;
         animation: claudezilla-note-bob 0.5s ease-in-out infinite;
       }
