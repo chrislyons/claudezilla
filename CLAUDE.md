@@ -1,12 +1,12 @@
 # Claudezilla - Claude Code Firefox Extension
 
-**Version:** 0.5.0
+**Version:** 0.4.5
 
 ## Overview
 
 Firefox extension providing browser automation for Claude Code CLI. A Google-free alternative to the official Chrome extension.
 
-**Key Features (v0.5.0):**
+**Key Features (v0.4.5):**
 - **NEW: Orphaned tab cleanup** - Automatic cleanup of tabs from disconnected agents (2-minute timeout)
 - Fair multi-agent coordination - POOL_FULL and MUTEX_BUSY errors with clear feedback
 - Concentration loops - Persistent iterative development like Ralph Wiggum
@@ -142,14 +142,14 @@ claudezilla@boot.industries
 | getConsoleLogs | Console output by level |
 | getNetworkRequests | XHR/fetch with timing |
 
-### Concentration Loop (v0.4.7)
+### Concentration Loop (v0.4.2)
 | Command | Description |
 |---------|-------------|
 | startLoop | Start iterative loop with prompt and max iterations |
 | stopLoop | Stop the active loop |
 | getLoopState | Get current loop state (iteration, prompt, etc.) |
 
-## Concentration Loops (v0.4.7)
+## Concentration Loops (v0.4.2)
 
 Enables Ralph Wiggum-style persistent iterative development. Claude works on a prompt repeatedly until completion.
 
@@ -199,7 +199,7 @@ ln -s "$(pwd)/plugin" ~/.claude/plugins/claudezilla-loop
 - Iteration counter and prompt preview
 - Stop button for manual cancellation
 
-## Screenshot Timing (v0.4.8)
+## Screenshot Timing (v0.4.3)
 
 Dynamic page readiness detection replaces hardcoded delays. Screenshots now wait for actual signals from the page before capture.
 
@@ -235,7 +235,7 @@ Dynamic page readiness detection replaces hardcoded delays. Screenshots now wait
 
 **Fast path:** If page is already idle, captures in <50ms (just double RAF).
 
-## Payload Optimization (v0.4.3)
+## Payload Optimization (v0.3.0)
 
 | Function | Default Limit | Parameter |
 |----------|---------------|-----------|
@@ -244,7 +244,7 @@ Dynamic page readiness detection replaces hardcoded delays. Screenshots now wait
 | getAccessibilitySnapshot | 200 nodes | `maxNodes` |
 | getPageState | 50 links, 30 buttons | `maxLinks`, `maxButtons`, etc. |
 
-## Multi-Agent Safety (v0.4.4+)
+## Multi-Agent Safety (v0.3.1+)
 
 **Tab Ownership:**
 - Each tab tracks its creator (agentId from MCP server)
@@ -253,12 +253,12 @@ Dynamic page readiness detection replaces hardcoded delays. Screenshots now wait
 - Other agents get: `OWNERSHIP: Cannot <operation> tab X (owned by agent_Y)`
 - Use `getTabs` to see ownership info for all tabs
 
-**Tab Pool Coordination (v0.4.9):**
+**Tab Pool Coordination (v0.4.4):**
 - Agents can only evict their **own** tabs when pool is full
 - If agent has no tabs but needs one, returns `POOL_FULL` error with hint to use mercy system
 - No silent eviction of other agents' tabs
 
-**Mercy System (v0.4.9):**
+**Mercy System (v0.4.4):**
 When blocked by POOL_FULL, agents can request tab space:
 1. Blocked agent calls `firefox_request_tab_space` → queues request
 2. Agents with >4 tabs see pending requests via `firefox_get_slot_requests`
@@ -270,7 +270,7 @@ When blocked by POOL_FULL, agents can request tab space:
 | `firefox_grant_tab_space` | Release oldest tab to help waiting agent (requires >2 tabs) |
 | `firefox_get_slot_requests` | Check if agents are waiting for space |
 
-**Orphaned Tab Cleanup (v0.5.0):**
+**Orphaned Tab Cleanup (v0.4.5):**
 Automatic cleanup of tabs from disconnected agents prevents tab pool exhaustion:
 - **Heartbeat tracking**: MCP server tracks agent activity via command timestamps
 - **Timeout threshold**: Agent is orphaned if no commands received in 2 minutes (120s)
@@ -299,13 +299,13 @@ This solves the "ghost agent" problem where tabs remain allocated to Claude sess
     Hint: Use getPageState (no mutex) or retry after delay.
   ```
 
-**Agent IDs (v0.4.5):**
+**Agent IDs (v0.4.0):**
 - Generated at MCP server startup: `agent_<128-bit-hex>_<pid>`
 - 128-bit entropy (16 random bytes) for security
 - Passed automatically with all ownership-requiring commands
 - Visible in `getTabs` response as `ownerId` field
 
-## Security (v0.4.5)
+## Security (v0.4.0)
 
 **Socket Security:**
 - Permissions set to 0600 (user-only access)
