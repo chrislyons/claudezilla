@@ -686,10 +686,10 @@ const TOOLS = [
     },
   },
 
-  // ===== LOOP/CONCENTRATION FEATURE =====
+  // ===== LOOP/FOCUS FEATURE =====
   {
     name: 'firefox_start_loop',
-    description: 'Start a concentration loop. Claude will automatically continue working on the prompt until max iterations reached or completion promise detected. Uses Stop hook enforcement - Claude cannot skip the loop.',
+    description: 'Start a focus loop. Claude will automatically continue working on the prompt until max iterations reached or completion promise detected. Uses Stop hook enforcement - Claude cannot skip the loop.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -711,7 +711,7 @@ const TOOLS = [
   },
   {
     name: 'firefox_stop_loop',
-    description: 'Stop the active concentration loop. The current iteration will complete, then Claude will be allowed to exit.',
+    description: 'Stop the active focus loop. The current iteration will complete, then Claude will be allowed to exit.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -719,7 +719,7 @@ const TOOLS = [
   },
   {
     name: 'firefox_loop_status',
-    description: 'Get the current concentration loop status. Returns: active, iteration, maxIterations, prompt, completionPromise, startedAt.',
+    description: 'Get the current focus loop status. Returns: active, iteration, maxIterations, prompt, completionPromise, startedAt.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -753,7 +753,7 @@ const TOOL_TO_COMMAND = {
   firefox_get_accessibility_snapshot: 'getAccessibilitySnapshot',
   // Keyboard input
   firefox_press_key: 'pressKey',
-  // Loop/concentration
+  // Loop/focus
   firefox_start_loop: 'startLoop',
   firefox_stop_loop: 'stopLoop',
   firefox_loop_status: 'getLoopState',
@@ -767,7 +767,7 @@ const TOOL_TO_COMMAND = {
 const server = new Server(
   {
     name: 'claudezilla',
-    version: '0.4.9',
+    version: '0.5.0',
   },
   {
     capabilities: {

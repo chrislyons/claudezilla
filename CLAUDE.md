@@ -1,15 +1,18 @@
 # Claudezilla - Claude Code Firefox Extension
 
-**Version:** 0.4.5
+**Version:** 0.5.0
 
 ## Overview
 
 Firefox extension providing browser automation for Claude Code CLI. A Google-free alternative to the official Chrome extension.
 
-**Key Features (v0.4.5):**
-- **NEW: Orphaned tab cleanup** - Automatic cleanup of tabs from disconnected agents (2-minute timeout)
+**Key Features (v0.5.0):**
+- **NEW: Focus loops** - Renamed from "concentration loops" with `/focus` slash command
+- **NEW: Auto-retry system** - Smart element waiting with enhanced error messages
+- **NEW: Task detection** - Automatic detection of iterative tasks for focus loop suggestions
+- Orphaned tab cleanup - Automatic cleanup of tabs from disconnected agents (2-minute timeout)
 - Fair multi-agent coordination - POOL_FULL and MUTEX_BUSY errors with clear feedback
-- Concentration loops - Persistent iterative development like Ralph Wiggum
+- Focus loops - Persistent iterative development like Ralph Wiggum
 - Single window with max 10 tabs shared across Claude agents
 - Multi-agent safety (tab ownership, screenshot mutex, 128-bit agent IDs, own-tab-only eviction)
 - Security hardening (socket permissions, URL validation, selector validation)
@@ -39,7 +42,7 @@ claudezilla/
 │   └── protocol.js     # Message serialization
 ├── mcp/                # MCP server
 │   └── server.js       # Tool definitions and command routing
-├── plugin/             # Claude Code plugin (concentration loops)
+├── plugin/             # Claude Code plugin (focus loops)
 │   ├── .claude-plugin/ # Plugin metadata
 │   ├── hooks/          # Stop hook for loop enforcement
 │   └── README.md
@@ -144,14 +147,14 @@ claudezilla@boot.industries
 | getConsoleLogs | Console output by level |
 | getNetworkRequests | XHR/fetch with timing |
 
-### Concentration Loop (v0.4.2)
+### Focus Loop (v0.4.2)
 | Command | Description |
 |---------|-------------|
 | startLoop | Start iterative loop with prompt and max iterations |
 | stopLoop | Stop the active loop |
 | getLoopState | Get current loop state (iteration, prompt, etc.) |
 
-## Concentration Loops (v0.4.2)
+## Focus Loops (v0.4.2)
 
 Enables Ralph Wiggum-style persistent iterative development. Claude works on a prompt repeatedly until completion.
 
@@ -168,7 +171,7 @@ Firefox Extension (visual control)
 
 **Usage:**
 ```javascript
-// Start a concentration loop
+// Start a focus loop
 firefox_start_loop({
   prompt: "Build a REST API for todos",
   maxIterations: 20,

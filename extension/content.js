@@ -669,6 +669,250 @@ function safeQuerySelector(selector) {
   return document.querySelector(selector);
 }
 
+// ===== AUTO-RETRY SYSTEM (v0.5.0) =====
+
+/**
+ * Configuration for intelligent auto-retry
+ */
+const RETRY_CONFIG = {
+  maxAttempts: 3,              // Total attempts (1 initial + 2 retries)
+  baseDelay: 100,              // Initial delay in ms
+  maxDelay: 1000,              // Cap on exponential backoff
+  autoWaitTimeout: 5000,       // Auto-inject waitFor timeout
+  enableAutoWait: true,        // Auto-wait for elements before failing
+};
+
+/**
+ * SMART QUERY: Automatically waits for element with exponential backoff
+ * Returns immediately if element exists, otherwise waits up to autoWaitTimeout
+ * @param {string} selector - CSS selector
+ * @param {object} options - Retry options
+ * @returns {Promise<Element|null>} Found element or null
+ */
+async function smartQuerySelector(selector, options = {}) {
+  const {
+    autoWait = RETRY_CONFIG.enableAutoWait,
+    timeout = RETRY_CONFIG.autoWaitTimeout,
+  } = options;
+
+  // Validate selector first
+  validateSelector(selector);
+
+  // Attempt 1: Immediate query (fast path)
+  let element = document.querySelector(selector);
+  if (element) return element;
+
+  // If auto-wait disabled, return null immediately
+  if (!autoWait) return null;
+
+  // Attempt 2: Auto-wait for element (up to timeout)
+  const startTime = Date.now();
+  const pollInterval = 100;
+
+  while (Date.now() - startTime < timeout) {
+    // Wait for next frame
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
+    });
+
+    // Check again
+    element = document.querySelector(selector);
+    if (element) return element;
+
+    // Poll interval delay
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  }
+
+  // Still not found after timeout
+  return null;
+}
+
+/**
+ * Generate a unique selector for an element
+ * @param {Element} element
+ * @returns {string} Unique CSS selector
+ */
+function generateUniqueSelector(element) {
+  // Try ID first
+  if (element.id) return `#${element.id}`;
+
+  // Try unique class combination
+  if (element.className && typeof element.className === 'string') {
+    const classes = element.className.split(/\s+/).filter(c => c && !c.includes(':'));
+    if (classes.length > 0) {
+      const classSelector = classes.map(c => `.${CSS.escape(c)}`).join('');
+      try {
+        if (document.querySelectorAll(classSelector).length === 1) {
+          return classSelector;
+        }
+      } catch (e) {
+        // Invalid selector, continue
+      }
+    }
+  }
+
+  // Try aria-label
+  const ariaLabel = element.getAttribute('aria-label');
+  if (ariaLabel) {
+    const escapedLabel = ariaLabel.replace(/"/g, '\\"');
+    const ariaSelector = `[aria-label="${escapedLabel}"]`;
+    try {
+      if (document.querySelectorAll(ariaSelector).length === 1) {
+        return ariaSelector;
+      }
+    } catch (e) {
+      // Continue to fallback
+    }
+  }
+
+  // Fallback to tag + nth-child
+  let path = element.tagName.toLowerCase();
+  let current = element;
+
+  while (current.parentElement && current.parentElement !== document.body) {
+    const parent = current.parentElement;
+    const siblings = Array.from(parent.children).filter(c => c.tagName === current.tagName);
+    if (siblings.length > 1) {
+      const index = siblings.indexOf(current) + 1;
+      path = `${current.tagName.toLowerCase()}:nth-of-type(${index})`;
+    }
+    path = `${parent.tagName.toLowerCase()} > ${path}`;
+    current = parent;
+  }
+
+  return path;
+}
+
+/**
+ * Find alternative selectors based on failed selector
+ * @param {string} failedSelector - The selector that didn't work
+ * @returns {Array} Array of {selector, reason} alternatives
+ */
+function findSelectorAlternatives(failedSelector) {
+  const alternatives = [];
+
+  // Extract potential text/ID hints from selector
+  const idMatch = failedSelector.match(/#([a-zA-Z0-9_-]+)/);
+  const textHints = [];
+
+  // Look for text patterns
+  const containsMatch = failedSelector.match(/:contains\(['"](.+?)['"]\)/i);
+  if (containsMatch) textHints.push(containsMatch[1]);
+
+  // Look for aria-label pattern
+  const ariaMatch = failedSelector.match(/\[aria-label[*~|^$]?=['"](.+?)['"]\]/i);
+  if (ariaMatch) textHints.push(ariaMatch[1]);
+
+  // If it looks like an ID selector, try similar IDs
+  if (idMatch) {
+    const idValue = idMatch[1].toLowerCase();
+    document.querySelectorAll('[id]').forEach(el => {
+      if (el.id.toLowerCase().includes(idValue) && alternatives.length < 3) {
+        alternatives.push({
+          selector: `#${el.id}`,
+          reason: `Similar ID found`
+        });
+      }
+    });
+  }
+
+  // Try to find elements by text content (for buttons/links)
+  const isButtonSelector = failedSelector.includes('button') || failedSelector.includes('btn');
+  const isLinkSelector = failedSelector.includes('a[') || failedSelector.includes('link');
+
+  if (isButtonSelector || textHints.length > 0) {
+    const searchText = textHints[0]?.toLowerCase() || '';
+    document.querySelectorAll('button, [role="button"], input[type="submit"], input[type="button"]').forEach(el => {
+      const btnText = (el.textContent || el.value || '').trim().toLowerCase();
+      const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
+
+      if ((searchText && (btnText.includes(searchText) || ariaLabel.includes(searchText))) ||
+          (isButtonSelector && btnText && alternatives.length < 3)) {
+        const uniqueSelector = generateUniqueSelector(el);
+        if (!alternatives.some(a => a.selector === uniqueSelector)) {
+          alternatives.push({
+            selector: uniqueSelector,
+            reason: `Button: "${(el.textContent || el.value || '').trim().slice(0, 30)}"`
+          });
+        }
+      }
+    });
+  }
+
+  if (isLinkSelector || textHints.length > 0) {
+    const searchText = textHints[0]?.toLowerCase() || '';
+    document.querySelectorAll('a[href]').forEach(el => {
+      const linkText = el.textContent.trim().toLowerCase();
+      if (searchText && linkText.includes(searchText) && alternatives.length < 5) {
+        const uniqueSelector = generateUniqueSelector(el);
+        if (!alternatives.some(a => a.selector === uniqueSelector)) {
+          alternatives.push({
+            selector: uniqueSelector,
+            reason: `Link: "${el.textContent.trim().slice(0, 30)}"`
+          });
+        }
+      }
+    });
+  }
+
+  // Try aria-label matching for any element
+  if (textHints.length > 0) {
+    const searchText = textHints[0].toLowerCase();
+    document.querySelectorAll('[aria-label]').forEach(el => {
+      const ariaLabel = el.getAttribute('aria-label').toLowerCase();
+      if (ariaLabel.includes(searchText) && alternatives.length < 5) {
+        const uniqueSelector = generateUniqueSelector(el);
+        if (!alternatives.some(a => a.selector === uniqueSelector)) {
+          alternatives.push({
+            selector: uniqueSelector,
+            reason: `aria-label="${el.getAttribute('aria-label')}"`
+          });
+        }
+      }
+    });
+  }
+
+  return alternatives.slice(0, 5); // Max 5 suggestions
+}
+
+/**
+ * Build helpful error message with selector suggestions
+ * @param {string} selector - Failed selector
+ * @param {string} operation - Operation name (click, type, etc)
+ * @returns {Error} Enhanced error with suggestions
+ */
+function buildElementNotFoundError(selector, operation) {
+  const suggestions = findSelectorAlternatives(selector);
+
+  let message = `Element not found: ${selector}`;
+
+  if (suggestions.length > 0) {
+    message += `\n\nSuggested alternatives:`;
+    suggestions.forEach(sugg => {
+      message += `\n  - ${sugg.selector} (${sugg.reason})`;
+    });
+  }
+
+  // Add page context
+  message += `\n\nPage context:`;
+  message += `\n  URL: ${window.location.href}`;
+  message += `\n  Title: ${document.title}`;
+
+  // Check for iframe context
+  if (window !== window.top) {
+    message += `\n  Warning: Inside iframe - element may be in parent frame`;
+  }
+
+  // Add hint
+  message += `\n\nHint: Use firefox_get_page_state() to see available elements.`;
+
+  return new Error(message);
+}
+
+// ===== END AUTO-RETRY SYSTEM =====
+
 /**
  * Scroll to element or position
  * @param {object} params - Parameters
@@ -943,18 +1187,20 @@ function getContent(params = {}) {
 }
 
 /**
- * Click an element
+ * Click an element (with smart auto-wait)
  * @param {object} params - Parameters
  * @param {string} params.selector - CSS selector for element to click
- * @returns {object} Result
+ * @param {boolean} params.autoWait - Whether to auto-wait for element (default: true)
+ * @param {number} params.waitTimeout - Max time to wait for element in ms (default: 5000)
+ * @returns {Promise<object>} Result
  */
-function click(params) {
-  const { selector } = params;
+async function click(params) {
+  const { selector, autoWait = true, waitTimeout = RETRY_CONFIG.autoWaitTimeout } = params;
 
-  // SECURITY: Validate selector before use
-  const element = safeQuerySelector(selector);
+  // SMART QUERY: Auto-waits for element if not found immediately
+  const element = await smartQuerySelector(selector, { autoWait, timeout: waitTimeout });
   if (!element) {
-    throw new Error(`Element not found: ${selector}`);
+    throw buildElementNotFoundError(selector, 'click');
   }
 
   // Show focusglow on clicked element
@@ -962,6 +1208,11 @@ function click(params) {
 
   // Scroll element into view
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Wait for scroll to settle
+  await new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
 
   // Simulate click
   element.click();
@@ -977,24 +1228,26 @@ function click(params) {
 }
 
 /**
- * Type text into an input element
+ * Type text into an input element (with smart auto-wait)
  * @param {object} params - Parameters
  * @param {string} params.selector - CSS selector for input element
  * @param {string} params.text - Text to type
  * @param {boolean} params.clear - Whether to clear existing value first
- * @returns {object} Result
+ * @param {boolean} params.autoWait - Whether to auto-wait for element (default: true)
+ * @param {number} params.waitTimeout - Max time to wait for element in ms (default: 5000)
+ * @returns {Promise<object>} Result
  */
-function type(params) {
-  const { selector, text, clear = true } = params;
+async function type(params) {
+  const { selector, text, clear = true, autoWait = true, waitTimeout = RETRY_CONFIG.autoWaitTimeout } = params;
 
   if (text === undefined) {
     throw new Error('text is required');
   }
 
-  // SECURITY: Validate selector before use
-  const element = safeQuerySelector(selector);
+  // SMART QUERY: Auto-waits for element if not found immediately
+  const element = await smartQuerySelector(selector, { autoWait, timeout: waitTimeout });
   if (!element) {
-    throw new Error(`Element not found: ${selector}`);
+    throw buildElementNotFoundError(selector, 'type');
   }
 
   // Check if element is an input or textarea
@@ -1512,11 +1765,11 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
 
         case 'click':
-          result = click(params);
+          result = await click(params);
           break;
 
         case 'type':
-          result = type(params);
+          result = await type(params);
           break;
 
         case 'getConsoleLogs':

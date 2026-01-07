@@ -1,7 +1,47 @@
 # CLZ002 Changelog
 
 **Project:** Claudezilla
-**Current Version:** 0.4.9
+**Current Version:** 0.5.0
+
+## v0.5.0 (2026-01-06)
+
+**Focus loops + Enhanced autonomy.**
+
+### Breaking Changes
+
+- **Terminology:** "Concentration loops" renamed to "Focus loops" across all documentation and UI
+  - MCP tool names unchanged: `firefox_start_loop`, `firefox_stop_loop`, `firefox_loop_status`
+  - Only user-facing text updated (descriptions, comments, documentation)
+
+### Features
+
+- **`/focus` slash command** - Skill wrapper for starting focus loops
+  - `plugin/commands/focus.md` - Start iterative development tasks
+  - `plugin/commands/cancel-focus.md` - Stop active loops
+  - `plugin/commands/help.md` - Usage documentation
+- **Auto-retry system** - Smart DOM element waiting with enhanced error messages
+  - `smartQuerySelector()` with configurable auto-wait (5s default timeout)
+  - `buildElementNotFoundError()` provides selector suggestions when elements not found
+  - `findSelectorAlternatives()` suggests similar IDs, buttons, links, aria-labels
+  - `click()` and `type()` now async with auto-wait built-in
+- **Task detection** - Automatic detection of iterative tasks for focus loop suggestions
+  - New `mcp/task-detector.js` module with `TaskDetector` class
+  - Keyword matching: TDD, iterate, refactor, "keep trying", "fix until"
+  - Behavioral pattern analysis: repeated test runs, file edits, error patterns
+  - Scoring system with confidence levels (low/medium/high)
+- **Auto-loop settings in popup** - UI controls for task detection behavior
+  - Enable/disable auto-detect iterative tasks (default: on)
+  - Enable/disable auto-start loops without confirmation (default: off)
+  - Configurable default max iterations (default: 15)
+  - Settings stored in `browser.storage.local` under `focusLoops` key
+
+### Updated
+
+- Plugin metadata updated for focus loop terminology
+- MCP server tool descriptions updated
+- Documentation updated across CLAUDE.md, CHANGELOG.md, CLZ002
+
+---
 
 ## v0.4.9 (2026-01-06)
 
@@ -128,7 +168,7 @@
 
 ## v0.4.2 (2026-01-05)
 
-**Concentration loops.**
+**Focus loops.**
 
 ### Features
 

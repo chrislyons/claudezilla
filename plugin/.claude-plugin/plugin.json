@@ -1,11 +1,11 @@
 {
   "name": "claudezilla-loop",
-  "description": "Concentration loop feature for Claudezilla - enables persistent iterative development",
+  "description": "Focus loop feature for Claudezilla - enables persistent iterative development",
   "version": "0.1.0",
   "author": {
     "name": "Boot Industries",
     "email": "hello@boot.industries"
   },
   "repository": "https://github.com/boot-industries/claudezilla",
-  "keywords": ["loop", "concentration", "automation", "claudezilla"]
+  "keywords": ["loop", "focus", "automation", "claudezilla"]
 }

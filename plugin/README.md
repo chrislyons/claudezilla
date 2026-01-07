@@ -1,10 +1,10 @@
 # Claudezilla Loop Plugin
 
-Concentration loop feature for Claudezilla - enables persistent iterative development.
+Focus loop feature for Claudezilla - enables persistent iterative development.
 
 ## Overview
 
-This plugin provides Ralph Wiggum-style concentration loops for Claudezilla. It uses Claude Code's Stop hook to intercept session exits and re-inject prompts, allowing Claude to work iteratively on a task.
+This plugin provides Ralph Wiggum-style focus loops for Claudezilla. It uses Claude Code's Stop hook to intercept session exits and re-inject prompts, allowing Claude to work iteratively on a task.
 
 ## How It Works
 
@@ -30,7 +30,7 @@ Or add to your Claude Code plugin configuration.
 ## Usage
 
 ```javascript
-// Start a concentration loop
+// Start a focus loop
 firefox_start_loop({
   prompt: "Build a REST API for todos",
   maxIterations: 20,

@@ -200,7 +200,7 @@
 <body>
   <h1>
     Claudezilla
-    <span class="version">v0.4.9</span>
+    <span class="version">v0.5.0</span>
   </h1>
 
   <div class="status">
@@ -252,7 +252,7 @@
   </div>
 
   <div id="loopSection" class="section" style="display: none;">
-    <div class="section-title">Concentration Loop</div>
+    <div class="section-title">Focus Loop</div>
     <div class="settings-group">
       <div id="loopStatus" style="padding: 12px;">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -268,6 +268,26 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Auto-Loop Detection Settings (v0.5.0) -->
+  <div class="section">
+    <div class="section-title">Auto-Loop Detection</div>
+    <div class="settings-group">
+      <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer;">
+        <input type="checkbox" id="enableAutoDetect" checked style="width: 16px; height: 16px;">
+        <span>Auto-detect iterative tasks</span>
+      </label>
+      <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer;">
+        <input type="checkbox" id="enableAutoStart" style="width: 16px; height: 16px;">
+        <span>Auto-start loops (no confirmation)</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px;">
+        <span style="flex-shrink: 0;">Default iterations:</span>
+        <input type="number" id="defaultMaxIterations" value="15" min="5" max="50"
+               style="width: 60px; padding: 4px 8px; border: 1px solid #333; border-radius: 4px; background: #1a1a1a; color: #fff;">
+      </label>
     </div>
   </div>
 
