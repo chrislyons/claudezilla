@@ -8,6 +8,7 @@
       font-size: 14px;
       padding: 16px;
       min-width: 280px;
+      min-height: 580px;
       margin: 0;
       background: #1a1a1a;
       color: #e0e0e0;
@@ -93,11 +94,21 @@
       gap: 6px;
     }
 
-    .setting-row input[type="checkbox"] {
+    .setting-row input[type="checkbox"],
+    input[type="checkbox"] {
       width: 16px;
       height: 16px;
       accent-color: #D14D32;
       cursor: pointer;
+    }
+
+    input[type="number"] {
+      accent-color: #D14D32;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #D14D32;
     }
 
     .setting-icon {
@@ -286,7 +297,7 @@
       <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px;">
         <span style="flex-shrink: 0;">Default iterations:</span>
         <input type="number" id="defaultMaxIterations" value="15" min="5" max="50"
-               style="width: 60px; padding: 4px 8px; border: 1px solid #333; border-radius: 4px; background: #1a1a1a; color: #fff;">
+               style="width: 60px; padding: 4px 8px; border: 1px solid #444; border-radius: 4px; background: #2a2a2a; color: #fff;">
       </label>
     </div>
   </div>
