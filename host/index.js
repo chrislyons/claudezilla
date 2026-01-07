@@ -301,10 +301,10 @@ function handleExtensionMessage(message) {
       id,
       success: true,
       result: {
-        host: '0.4.9',
+        host: '0.5.0',
         node: process.version,
         platform: process.platform,
-        features: ['security-hardened', 'concentration-loop'],
+        features: ['security-hardened', 'focus-loop', 'auto-retry', 'task-detection'],
       },
     });
   }

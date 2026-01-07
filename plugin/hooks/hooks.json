@@ -1,5 +1,5 @@
 {
-  "description": "Claudezilla concentration loop - intercepts session exit to enable persistent iteration",
+  "description": "Claudezilla focus loop - intercepts session exit to enable persistent iteration",
   "hooks": {
     "Stop": [
       {

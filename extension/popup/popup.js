@@ -1,6 +1,6 @@
 /**
  * Claudezilla Popup Script
- * v0.4.9 - Error handling and popup version display fixes
+ * v0.5.0 - Auto-loop detection settings, focus loop terminology
  */
 
 // Elements
@@ -18,11 +18,23 @@ const loopIterationText = document.getElementById('loopIterationText');
 const loopPromptPreview = document.getElementById('loopPromptPreview');
 const stopLoopBtn = document.getElementById('stopLoopBtn');
 
+// Auto-loop detection elements (v0.5.0)
+const enableAutoDetectCheckbox = document.getElementById('enableAutoDetect');
+const enableAutoStartCheckbox = document.getElementById('enableAutoStart');
+const defaultMaxIterationsInput = document.getElementById('defaultMaxIterations');
+
 // Default settings
 const DEFAULT_SETTINGS = {
   showWatermark: true,
   showFocusglow: true,
   compressImages: true,
+};
+
+// Default auto-loop settings (v0.5.0)
+const DEFAULT_AUTOLOOP_SETTINGS = {
+  autoDetect: true,
+  autoStart: false,
+  defaultMaxIterations: 15,
 };
 
 /**
@@ -53,6 +65,37 @@ async function saveSettings() {
     await browser.storage.local.set({ claudezilla: settings });
   } catch (e) {
     console.log('[claudezilla] Could not save settings:', e.message);
+  }
+}
+
+/**
+ * Load auto-loop detection settings (v0.5.0)
+ */
+async function loadAutoLoopSettings() {
+  try {
+    const stored = await browser.storage.local.get('focusLoops');
+    const settings = { ...DEFAULT_AUTOLOOP_SETTINGS, ...stored.focusLoops };
+    enableAutoDetectCheckbox.checked = settings.autoDetect;
+    enableAutoStartCheckbox.checked = settings.autoStart;
+    defaultMaxIterationsInput.value = settings.defaultMaxIterations;
+  } catch (e) {
+    console.log('[claudezilla] Could not load auto-loop settings:', e.message);
+  }
+}
+
+/**
+ * Save auto-loop detection settings (v0.5.0)
+ */
+async function saveAutoLoopSettings() {
+  try {
+    const settings = {
+      autoDetect: enableAutoDetectCheckbox.checked,
+      autoStart: enableAutoStartCheckbox.checked,
+      defaultMaxIterations: parseInt(defaultMaxIterationsInput.value, 10) || 15,
+    };
+    await browser.storage.local.set({ focusLoops: settings });
+  } catch (e) {
+    console.log('[claudezilla] Could not save auto-loop settings:', e.message);
   }
 }
 
@@ -218,10 +261,18 @@ async function init() {
   // Load settings
   await loadSettings();
 
+  // Load auto-loop settings (v0.5.0)
+  await loadAutoLoopSettings();
+
   // Add setting change listeners
   showWatermarkCheckbox.addEventListener('change', saveSettings);
   showFocusglowCheckbox.addEventListener('change', saveSettings);
   compressImagesCheckbox.addEventListener('change', saveSettings);
+
+  // Add auto-loop setting change listeners (v0.5.0)
+  enableAutoDetectCheckbox.addEventListener('change', saveAutoLoopSettings);
+  enableAutoStartCheckbox.addEventListener('change', saveAutoLoopSettings);
+  defaultMaxIterationsInput.addEventListener('change', saveAutoLoopSettings);
 
   // Check permission status
   await checkPermissionStatus();
