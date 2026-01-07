@@ -301,7 +301,7 @@ function handleExtensionMessage(message) {
       id,
       success: true,
       result: {
-        host: '0.5.1',
+        host: '0.5.2',
         node: process.version,
         platform: process.platform,
         features: ['security-hardened', 'focus-loop', 'auto-retry', 'task-detection'],

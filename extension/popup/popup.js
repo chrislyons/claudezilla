@@ -293,7 +293,7 @@ async function init() {
   if (supportLink) {
     supportLink.addEventListener('click', (e) => {
       e.preventDefault();
-      browser.tabs.create({ url: browser.runtime.getURL('support.html') });
+      browser.tabs.create({ url: 'https://claudezilla.com/support' });
       window.close(); // Close popup after opening
     });
   }
